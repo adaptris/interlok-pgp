@@ -1,5 +1,7 @@
 package com.adaptris.security.pgp;
 
+import com.adaptris.annotation.AdapterComponent;
+import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
 import com.adaptris.core.ServiceImp;
@@ -7,6 +9,7 @@ import com.adaptris.core.common.*;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -16,18 +19,31 @@ import org.bouncycastle.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Iterator;
 
+@XStreamAlias("pgp-encryption")
+@AdapterComponent
+@ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key")
 public class PGPEncryptService extends ServiceImp
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPEncryptService.class);
 
+	@NotNull
+	@Valid
 	private DataInputParameter key = new MetadataStreamInputParameter();
+
+	@NotNull
+	@Valid
 	private DataInputParameter clearText = new PayloadStreamInputParameter();
+
+	@NotNull
+	@Valid
 	private DataOutputParameter cipherText = new PayloadStreamOutputParameter();
 
 	/**
