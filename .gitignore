@@ -1,6 +1,7 @@
 # Standard project files
 .eclipse
 build.properties
+unit-tests.properties
 .classpath
 .project
 .idea
