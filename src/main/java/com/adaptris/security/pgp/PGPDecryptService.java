@@ -15,6 +15,7 @@ import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -29,8 +30,10 @@ import org.slf4j.LoggerFactory;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
 import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.util.Iterator;
 
 @XStreamAlias("pgp-decryption")
@@ -39,6 +42,13 @@ import java.util.Iterator;
 public class PGPDecryptService extends ServiceImp
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPDecryptService.class);
+
+	private static final Charset CHARSET = Charset.forName("UTF-8");
+
+	static
+	{
+		Security.addProvider(new BouncyCastleProvider());
+	}
 
 	@NotNull
 	@Valid
@@ -67,7 +77,7 @@ public class PGPDecryptService extends ServiceImp
 			Object key = this.key.extract(message);
 			if (key instanceof String)
 			{
-				key = new ByteArrayInputStream(((String)key).getBytes(message.getContentEncoding()));
+				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
 			}
 			if (!(key instanceof InputStream))
 			{
@@ -76,9 +86,9 @@ public class PGPDecryptService extends ServiceImp
 			Object passphrase = this.passphrase.extract(message);
 			if (passphrase instanceof InputStream)
 			{
-				StringWriter writer = new StringWriter();
-				IOUtils.copy((InputStream)passphrase, writer, message.getContentEncoding());
-				passphrase = writer.toString();
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				IOUtils.copy((InputStream)passphrase, baos);
+				passphrase = baos.toString(CHARSET.toString());
 			}
 			if (!(passphrase instanceof String))
 			{
@@ -87,7 +97,7 @@ public class PGPDecryptService extends ServiceImp
 			Object cipherText = this.cipherText.extract(message);
 			if (cipherText instanceof String)
 			{
-				cipherText = new ByteArrayInputStream(((String)cipherText).getBytes(message.getContentEncoding()));
+				cipherText = new ByteArrayInputStream(((String)cipherText).getBytes(CHARSET));
 			}
 			if (!(cipherText instanceof InputStream))
 			{
@@ -100,12 +110,12 @@ public class PGPDecryptService extends ServiceImp
 
 			try
 			{
-				this.clearText.insert(clearText.toString(message.getContentEncoding()), message);
+				this.clearText.insert(clearText.toString(CHARSET.toString()), message);
 			}
 			catch (InvalidParameterException e)
 			{
 				/* this.clearText was not expecting a String, must be an InputStreamWithEncoding */
-				this.clearText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(clearText.toByteArray()), message.getContentEncoding()), message);
+				this.clearText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(clearText.toByteArray()), null), message);
 			}
 		}
 		catch (Exception e)

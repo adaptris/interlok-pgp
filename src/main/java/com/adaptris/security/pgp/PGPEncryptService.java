@@ -1,7 +1,9 @@
 package com.adaptris.security.pgp;
 
 import com.adaptris.annotation.AdapterComponent;
+import com.adaptris.annotation.AdvancedConfig;
 import com.adaptris.annotation.ComponentProfile;
+import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
 import com.adaptris.core.ServiceImp;
@@ -10,7 +12,9 @@ import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.apache.commons.lang.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
@@ -22,8 +26,10 @@ import org.slf4j.LoggerFactory;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -33,6 +39,13 @@ import java.util.Iterator;
 public class PGPEncryptService extends ServiceImp
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPEncryptService.class);
+
+	private static final Charset CHARSET = Charset.forName("UTF-8");
+
+	static
+	{
+		Security.addProvider(new BouncyCastleProvider());
+	}
 
 	@NotNull
 	@Valid
@@ -46,6 +59,16 @@ public class PGPEncryptService extends ServiceImp
 	@Valid
 	private DataOutputParameter cipherText = new PayloadStreamOutputParameter();
 
+	@Valid
+	@AdvancedConfig
+	@InputFieldDefault(value = "true")
+	private Boolean armorEncoding;
+
+	@Valid
+	@AdvancedConfig
+	@InputFieldDefault(value = "true")
+	private Boolean integrityCheck;
+
 	/**
 	 * {@inheritDoc}.
 	 */
@@ -57,7 +80,7 @@ public class PGPEncryptService extends ServiceImp
 			Object key = this.key.extract(message);
 			if (key instanceof String)
 			{
-				key = new ByteArrayInputStream(((String)key).getBytes(message.getContentEncoding()));
+				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
 			}
 			if (!(key instanceof InputStream))
 			{
@@ -66,7 +89,7 @@ public class PGPEncryptService extends ServiceImp
 			Object clearText = this.clearText.extract(message);
 			if (clearText instanceof String)
 			{
-				clearText = new ByteArrayInputStream(((String)clearText).getBytes(message.getContentEncoding()));
+				clearText = new ByteArrayInputStream(((String)clearText).getBytes(CHARSET));
 			}
 			if (!(clearText instanceof InputStream))
 			{
@@ -75,16 +98,16 @@ public class PGPEncryptService extends ServiceImp
 
 			ByteArrayOutputStream cipherText = new ByteArrayOutputStream();
 
-			encrypt((InputStream)clearText, cipherText, (InputStream)key, true, true);
+			encrypt((InputStream)clearText, cipherText, (InputStream)key, armorEncoding, integrityCheck);
 
 			try
 			{
-				this.cipherText.insert(cipherText.toString(message.getContentEncoding()), message);
+				this.cipherText.insert(cipherText.toString(CHARSET.toString()), message);
 			}
-			catch (InvalidParameterException e)
+			catch (ClassCastException e)
 			{
 				/* this.cipherText was not expecting a String, must be an InputStreamWithEncoding */
-				this.cipherText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(cipherText.toByteArray()), message.getContentEncoding()), message);
+				this.cipherText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(cipherText.toByteArray()), null), message);
 			}
 		}
 		catch (Exception e)
@@ -152,6 +175,26 @@ public class PGPEncryptService extends ServiceImp
 	public DataOutputParameter getCipherText()
 	{
 		return cipherText;
+	}
+
+	public void setArmorEncoding(Boolean armorEncoding)
+	{
+		this.armorEncoding = BooleanUtils.toBooleanDefaultIfNull(armorEncoding, true);
+	}
+
+	public Boolean getArmorEncoding()
+	{
+		return armorEncoding;
+	}
+
+	public void setIntegrityCheck(Boolean integrityCheck)
+	{
+		this.integrityCheck = BooleanUtils.toBooleanDefaultIfNull(integrityCheck, true);
+	}
+
+	public Boolean getIntegrityCheck()
+	{
+		return integrityCheck;
 	}
 
 	/**
