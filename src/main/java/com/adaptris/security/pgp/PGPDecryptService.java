@@ -235,80 +235,72 @@ public class PGPDecryptService extends ServiceImp
 	private static void decrypt(InputStream in, InputStream key, char[] passwd, OutputStream out) throws PGPException, IOException, NoSuchProviderException
 	{
 		in = getDecoderStream(in);
-		try
+		JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
+		PGPEncryptedDataList enc;
+		Object o = pgpF.nextObject();
+		//
+		// the first object might be a PGP marker packet.
+		//
+		if (o instanceof PGPEncryptedDataList)
 		{
-			JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
-			PGPEncryptedDataList enc;
-			Object o = pgpF.nextObject();
-			//
-			// the first object might be a PGP marker packet.
-			//
-			if (o instanceof PGPEncryptedDataList)
+			enc = (PGPEncryptedDataList)o;
+		}
+		else
+		{
+			enc = (PGPEncryptedDataList)pgpF.nextObject();
+		}
+		//
+		// find the secret key
+		//
+		Iterator it = enc.getEncryptedDataObjects();
+		PGPPrivateKey sKey = null;
+		PGPPublicKeyEncryptedData pbe = null;
+		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(getDecoderStream(key), new JcaKeyFingerprintCalculator());
+		while (sKey == null && it.hasNext())
+		{
+			pbe = (PGPPublicKeyEncryptedData)it.next();
+			sKey = findSecretKey(pgpSec, pbe.getKeyID(), passwd);
+		}
+		if (sKey == null)
+		{
+			throw new IllegalArgumentException("Secret key for message not found");
+		}
+		InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(sKey));
+		JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
+		PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
+		InputStream compressedStream = new BufferedInputStream(cData.getDataStream());
+		JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(compressedStream);
+		Object message = pgpFact.nextObject();
+		if (message instanceof PGPLiteralData)
+		{
+			PGPLiteralData ld = (PGPLiteralData)message;
+			InputStream unc = ld.getInputStream();
+			OutputStream fOut = new BufferedOutputStream(out);
+			Streams.pipeAll(unc, fOut);
+			fOut.close();
+		}
+		else if (message instanceof PGPOnePassSignatureList)
+		{
+			throw new PGPException("Encrypted message contains a signed message - not literal data");
+		}
+		else
+		{
+			throw new PGPException("Message is not a simple encrypted file - type unknown");
+		}
+		if (pbe.isIntegrityProtected())
+		{
+			if (!pbe.verify())
 			{
-				enc = (PGPEncryptedDataList)o;
+				log.warn("Message failed integrity check");
 			}
 			else
 			{
-				enc = (PGPEncryptedDataList)pgpF.nextObject();
-			}
-			//
-			// find the secret key
-			//
-			Iterator it = enc.getEncryptedDataObjects();
-			PGPPrivateKey sKey = null;
-			PGPPublicKeyEncryptedData pbe = null;
-			PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(getDecoderStream(key), new JcaKeyFingerprintCalculator());
-			while (sKey == null && it.hasNext())
-			{
-				pbe = (PGPPublicKeyEncryptedData)it.next();
-				sKey = findSecretKey(pgpSec, pbe.getKeyID(), passwd);
-			}
-			if (sKey == null)
-			{
-				throw new IllegalArgumentException("secret key for message not found.");
-			}
-			InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(sKey));
-			JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
-			PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
-			InputStream compressedStream = new BufferedInputStream(cData.getDataStream());
-			JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(compressedStream);
-			Object message = pgpFact.nextObject();
-			if (message instanceof PGPLiteralData)
-			{
-				PGPLiteralData ld = (PGPLiteralData)message;
-				InputStream unc = ld.getInputStream();
-				OutputStream fOut = new BufferedOutputStream(out);
-				Streams.pipeAll(unc, fOut);
-				fOut.close();
-			}
-			else if (message instanceof PGPOnePassSignatureList)
-			{
-				throw new PGPException("encrypted message contains a signed message - not literal data.");
-			}
-			else
-			{
-				throw new PGPException("message is not a simple encrypted file - type unknown.");
-			}
-			if (pbe.isIntegrityProtected())
-			{
-				if (!pbe.verify())
-				{
-					log.warn("message failed integrity check");
-				}
-				else
-				{
-					log.debug("message integrity check passed");
-				}
-			}
-			else
-			{
-				log.debug("no message integrity check");
+				log.debug("Message integrity check passed");
 			}
 		}
-		catch (PGPException e)
+		else
 		{
-			log.error("Exception during PGP decryption", e);
-			throw e;
+			log.debug("No message integrity check");
 		}
 	}
 

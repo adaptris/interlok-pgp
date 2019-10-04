@@ -32,6 +32,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.theories.suppliers.TestedOn;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -64,7 +65,7 @@ public class PGPEncryptTest extends ServiceCase
 		encrypt.doService(message);
 
 		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE);
+		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, true);
 
 		decrypt.doService(message);
 
@@ -80,7 +81,7 @@ public class PGPEncryptTest extends ServiceCase
 		encrypt.doService(message);
 
 		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE);
+		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
 
 		decrypt.doService(message);
 
@@ -96,7 +97,7 @@ public class PGPEncryptTest extends ServiceCase
 		encrypt.doService(message);
 
 		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE);
+		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, true);
 
 		decrypt.doService(message);
 
@@ -112,11 +113,97 @@ public class PGPEncryptTest extends ServiceCase
 		encrypt.doService(message);
 
 		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE);
+		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
 
 		decrypt.doService(message);
 
 		Assert.assertEquals(MESSAGE, message.getContent());
+	}
+
+	@Test
+	public void testEncryptionKeyException() throws Exception
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPEncryptService service = getEncryptService(publicKey, false, false);
+			service.setKey(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testEncryptionDataException() throws Exception
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPEncryptService service = getEncryptService(publicKey, false, false);
+			service.setClearText(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testDecryptionKeyException() throws Exception
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
+			service.setKey(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testDecryptionPassphraseException() throws Exception
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
+			service.setPassphrase(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testDecryptionDataException() throws Exception
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(PASSPHRASE);
+			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
+			service.setPassphrase(new PayloadStreamInputParameter());
+			service.setCipherText(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
 	}
 
 	private PGPEncryptService getEncryptService(PGPPublicKeyRing key, boolean armor, boolean integrity) throws Exception
@@ -135,7 +222,7 @@ public class PGPEncryptTest extends ServiceCase
 		return service;
 	}
 
-	private PGPDecryptService getDecryptService(PGPSecretKeyRing key, String passphrase) throws Exception
+	private PGPDecryptService getDecryptService(PGPSecretKeyRing key, String passphrase, boolean armor) throws Exception
 	{
 		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
 		ArmoredOutputStream armoredKey = new ArmoredOutputStream(keyBytes);
@@ -145,7 +232,7 @@ public class PGPEncryptTest extends ServiceCase
 		PGPDecryptService service = new PGPDecryptService();
 		service.setKey(new ConstantDataInputParameter(keyBytes.toString()));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
-		service.setCipherText(new PayloadStreamInputParameter());
+		service.setCipherText(armor ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setClearText(new StringPayloadDataOutputParameter());
 		return service;
 	}

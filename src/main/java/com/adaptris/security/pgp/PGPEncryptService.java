@@ -177,21 +177,41 @@ public class PGPEncryptService extends ServiceImp
 		return cipherText;
 	}
 
+	/**
+	 * Set whether the cipher text output should be ASCII armor encoded.
+	 *
+	 * @param armorEncoding Whether the cipher text should be armor encoded.
+	 */
 	public void setArmorEncoding(Boolean armorEncoding)
 	{
 		this.armorEncoding = BooleanUtils.toBooleanDefaultIfNull(armorEncoding, true);
 	}
 
+	/**
+	 * Get whether the cipher text output should be ASCII armor encoded.
+	 *
+	 * @return Whether the cipher text should be armor encoded.
+	 */
 	public Boolean getArmorEncoding()
 	{
 		return armorEncoding;
 	}
 
+	/**
+	 * Set whether there should be integrity checks within the cipher text.
+	 *
+	 * @param integrityCheck Whether there should be integrity checks in the cipher text.
+	 */
 	public void setIntegrityCheck(Boolean integrityCheck)
 	{
 		this.integrityCheck = BooleanUtils.toBooleanDefaultIfNull(integrityCheck, true);
 	}
 
+	/**
+	 * Get whether there should be integrity checks within the cipher text.
+	 *
+	 * @return Whether there should be integrity checks in the cipher text.
+	 */
 	public Boolean getIntegrityCheck()
 	{
 		return integrityCheck;
@@ -230,24 +250,16 @@ public class PGPEncryptService extends ServiceImp
 		{
 			out = new ArmoredOutputStream(out);
 		}
-		try
+		PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
+		cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider("BC"));
+		OutputStream cOut = cPk.open(out, new byte[1 << 16]);
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+		writeFileToLiteralData(in, comData.open(cOut), PGPLiteralData.BINARY, new byte[1 << 16]);
+		comData.close();
+		cOut.close();
+		if (armor)
 		{
-			PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
-			cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider("BC"));
-			OutputStream cOut = cPk.open(out, new byte[1 << 16]);
-			PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-			writeFileToLiteralData(in, comData.open(cOut), PGPLiteralData.BINARY, new byte[1 << 16]);
-			comData.close();
-			cOut.close();
-			if (armor)
-			{
-				out.close();
-			}
-		}
-		catch (PGPException e)
-		{
-			log.error("Exception during PGP encryption", e);
-			throw e;
+			out.close();
 		}
 	}
 
@@ -281,7 +293,7 @@ public class PGPEncryptService extends ServiceImp
 				}
 			}
 		}
-		throw new IllegalArgumentException("Can't find encryption key in key ring.");
+		throw new IllegalArgumentException("Can't find encryption key in key ring");
 	}
 
 	/**
