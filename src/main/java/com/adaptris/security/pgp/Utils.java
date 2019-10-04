@@ -8,7 +8,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class Utils
+class Utils
 {
 	private static final int READ_AHEAD = 60;
 
@@ -25,7 +25,7 @@ public class Utils
 	 * @throws IOException if an error occurs reading the stream, or initialising the
 	 *                     {@link ArmoredInputStream}.
 	 */
-	public static InputStream getDecoderStream(InputStream in) throws IOException
+	static InputStream getDecoderStream(InputStream in) throws IOException
 	{
 		if (!in.markSupported())
 		{
