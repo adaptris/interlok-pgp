@@ -112,7 +112,7 @@ public class PGPDecryptService extends ServiceImp
 			{
 				this.clearText.insert(clearText.toString(CHARSET.toString()), message);
 			}
-			catch (InvalidParameterException e)
+			catch (ClassCastException e)
 			{
 				/* this.clearText was not expecting a String, must be an InputStreamWithEncoding */
 				this.clearText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(clearText.toByteArray()), null), message);

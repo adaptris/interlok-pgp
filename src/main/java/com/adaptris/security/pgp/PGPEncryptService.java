@@ -62,12 +62,12 @@ public class PGPEncryptService extends ServiceImp
 	@Valid
 	@AdvancedConfig
 	@InputFieldDefault(value = "true")
-	private Boolean armorEncoding;
+	private Boolean armorEncoding = true;
 
 	@Valid
 	@AdvancedConfig
 	@InputFieldDefault(value = "true")
-	private Boolean integrityCheck;
+	private Boolean integrityCheck = true;
 
 	/**
 	 * {@inheritDoc}.
@@ -250,7 +250,8 @@ public class PGPEncryptService extends ServiceImp
 		{
 			out = new ArmoredOutputStream(out);
 		}
-		PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
+		/* TODO cipher could be an advanced option */
+		PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.AES_256).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
 		cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider("BC"));
 		OutputStream cOut = cPk.open(out, new byte[1 << 16]);
 		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
