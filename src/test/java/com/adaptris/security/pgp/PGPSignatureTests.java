@@ -3,11 +3,15 @@ package com.adaptris.security.pgp;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.AdaptrisMessageFactory;
 import com.adaptris.core.common.ConstantDataInputParameter;
+import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.MetadataStreamOutputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.StringPayloadDataInputParameter;
 import com.adaptris.core.common.StringPayloadDataOutputParameter;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.junit.Assert;
 
@@ -22,6 +26,13 @@ public class PGPSignatureTests extends PGPTests
 
 		sign.doService(message);
 
+		String signature = message.getMetadataValue("signature");
+		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+		message.addMetadata("signature", signature);
+		PGPVerifyService verify = getVerifyService(publicKey, true);
+
+		verify.doService(message);
+
 		Assert.assertEquals(MESSAGE, message.getContent());
 	}
 
@@ -32,23 +43,32 @@ public class PGPSignatureTests extends PGPTests
 
 		sign.doService(message);
 
+		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+		PGPVerifyService verify = getVerifyService(publicKey, false);
+
+		verify.doService(message);
+
 		Assert.assertEquals(MESSAGE, message.getContent());
 	}
 
-	private PGPSignService getSignService(PGPSecretKeyRing key, String passphrase, boolean detached, boolean armor) throws Exception
+	private PGPSignService getSignService(PGPSecretKey key, String passphrase, boolean detached, boolean armor) throws Exception
 	{
-		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
-		ArmoredOutputStream armoredKey = new ArmoredOutputStream(keyBytes);
-		key.encode(armoredKey);
-		armoredKey.close();
-
 		PGPSignService service = new PGPSignService();
-		service.setKey(new ConstantDataInputParameter(keyBytes.toString()));
+		service.setKey(new ConstantDataInputParameter(getKey(key)));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
 		service.setDataToSign(new PayloadStreamInputParameter());
 		service.setDetachedSignature(detached);
 		service.setArmorEncoding(armor);
 		service.setSignature(detached ? new MetadataStreamOutputParameter("signature") : new StringPayloadDataOutputParameter());
+		return service;
+	}
+
+	private PGPVerifyService getVerifyService(PGPPublicKey key, boolean detached) throws Exception
+	{
+		PGPVerifyService service = new PGPVerifyService();
+		service.setKey(new ConstantDataInputParameter(getKey(key)));
+		service.setSignedMessage(new PayloadStreamInputParameter());
+		service.setSignature(detached ? new MetadataStreamInputParameter("signature") : null);
 		return service;
 	}
 
