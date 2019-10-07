@@ -350,7 +350,6 @@ public class PGPSignService extends ServiceImp
 		PGPSecretKey pgpSec = readSecretKey(key);
 		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
 		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
-		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 		BCPGOutputStream bOut = new BCPGOutputStream(out);
 		int ch;
