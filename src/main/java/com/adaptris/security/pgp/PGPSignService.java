@@ -1,12 +1,15 @@
 package com.adaptris.security.pgp;
 
 import com.adaptris.annotation.AdapterComponent;
+import com.adaptris.annotation.AdvancedConfig;
 import com.adaptris.annotation.ComponentProfile;
+import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.CoreException;
 import com.adaptris.core.ServiceException;
 import com.adaptris.core.ServiceImp;
 import com.adaptris.core.common.InputStreamWithEncoding;
+import com.adaptris.core.common.MetadataDataOutputParameter;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
@@ -15,18 +18,12 @@ import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPSecretKey;
-import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.PGPSignatureGenerator;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -57,7 +54,8 @@ public class PGPSignService extends ServiceImp
 
 	private static final Charset CHARSET = Charset.forName("UTF-8");
 
-	private static final int DIGEST = HashAlgorithmTags.SHA1;
+	/* TODO digest could be an advanced option */
+	private static final int DIGEST = HashAlgorithmTags.SHA256;
 
 	static
 	{
@@ -76,9 +74,19 @@ public class PGPSignService extends ServiceImp
 	@Valid
 	private DataInputParameter dataToSign = new PayloadStreamInputParameter();
 
+	@Valid
+	@AdvancedConfig
+	@InputFieldDefault(value = "true")
+	private Boolean armorEncoding = true;
+
+	@Valid
+	@AdvancedConfig
+	@InputFieldDefault(value = "true")
+	private Boolean detachedSignature = true;
+
 	@NotNull
 	@Valid
-	private DataOutputParameter signature = new PayloadStreamOutputParameter();
+	private DataOutputParameter signature = new MetadataDataOutputParameter();
 
 	/**
 	 * {@inheritDoc}.
@@ -95,7 +103,7 @@ public class PGPSignService extends ServiceImp
 			}
 			if (!(key instanceof InputStream))
 			{
-				throw new InterlokException("Could not read public key");
+				throw new InterlokException("Could not read private key");
 			}
 			Object passphrase = this.passphrase.extract(message);
 			if (passphrase instanceof InputStream)
@@ -106,7 +114,7 @@ public class PGPSignService extends ServiceImp
 			}
 			if (!(passphrase instanceof String))
 			{
-				throw new InterlokException("Could not read public key");
+				throw new InterlokException("Could not read private key");
 			}
 			Object data = this.dataToSign.extract(message);
 			if (data instanceof String)
@@ -120,13 +128,20 @@ public class PGPSignService extends ServiceImp
 
 			ByteArrayOutputStream clearText = new ByteArrayOutputStream();
 
-			sign((InputStream)data, (InputStream)key, ((String)passphrase).toCharArray(), DIGEST, clearText);
+			if (detachedSignature)
+			{
+				signDetached((InputStream)data, (InputStream)key, ((String)passphrase).toCharArray(), DIGEST, armorEncoding, clearText);
+			}
+			else
+			{
+				signClear((InputStream)data, (InputStream)key, ((String)passphrase).toCharArray(), DIGEST, clearText);
+			}
 
 			try
 			{
 				this.signature.insert(clearText.toString(CHARSET.toString()), message);
 			}
-			catch (InvalidParameterException e)
+			catch (ClassCastException e)
 			{
 				/* this.clearText was not expecting a String, must be an InputStreamWithEncoding */
 				this.signature.insert(new InputStreamWithEncoding(new ByteArrayInputStream(clearText.toByteArray()), null), message);
@@ -200,6 +215,46 @@ public class PGPSignService extends ServiceImp
 	}
 
 	/**
+	 * Set whether the signature output should be ASCII armor encoded.
+	 *
+	 * @param armorEncoding Whether the signature should be armor encoded.
+	 */
+	public void setArmorEncoding(Boolean armorEncoding)
+	{
+		this.armorEncoding = BooleanUtils.toBooleanDefaultIfNull(armorEncoding, true);
+	}
+
+	/**
+	 * Get whether the signature output should be ASCII armor encoded.
+	 *
+	 * @return Whether the signature should be armor encoded.
+	 */
+	public Boolean getArmorEncoding()
+	{
+		return armorEncoding;
+	}
+
+	/**
+	 * Set whether the signature should be detached from the message.
+	 *
+	 * @param detachedSignature Whether the signature should be detached.
+	 */
+	public void setDetachedSignature(Boolean detachedSignature)
+	{
+		this.detachedSignature = BooleanUtils.toBooleanDefaultIfNull(detachedSignature, true);
+	}
+
+	/**
+	 * Get whether the signature should be detached from the message.
+	 *
+	 * @return Whether the signature should be detached.
+	 */
+	public Boolean getDetachedSignature()
+	{
+		return detachedSignature;
+	}
+
+	/**
 	 * Set the signature.
 	 *
 	 * @param signature The signature.
@@ -246,21 +301,13 @@ public class PGPSignService extends ServiceImp
 		/* unused */
 	}
 
-	private static void sign(InputStream in, InputStream key, char[] passwd, int digest, OutputStream out) throws PGPException, IOException, SignatureException
+	private static void signClear(InputStream in, InputStream key, char[] passwd, int digest, OutputStream out) throws PGPException, IOException, SignatureException
 	{
-		PGPSecretKey pgpSecKey = readSecretKey(key);
-		PGPPrivateKey pgpPrivKey = pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
-		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSecKey.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
+		PGPSecretKey pgpSec = readSecretKey(key);
+		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
 		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-
 		sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, pgpPrivKey);
-
-		Iterator it = pgpSecKey.getPublicKey().getUserIDs();
-		if (it.hasNext())
-		{
-			spGen.setSignerUserID(false, (String)it.next());
-			sGen.setHashedSubpackets(spGen.generate());
-		}
 		InputStream fIn = new BufferedInputStream(in);
 		ArmoredOutputStream aOut = new ArmoredOutputStream(out);
 		aOut.beginClearText(digest);
@@ -286,6 +333,42 @@ public class PGPSignService extends ServiceImp
 		BCPGOutputStream bOut = new BCPGOutputStream(aOut);
 		sGen.generate().encode(bOut);
 		aOut.close();
+	}
+
+	private static void signDetached(InputStream in, InputStream key, char[] passwd, int digest, boolean armor, OutputStream out) throws PGPException, IOException, SignatureException
+	{
+		if (armor)
+		{
+			out = new ArmoredOutputStream(out);
+		}
+		PGPSecretKey pgpSec = readSecretKey(key);
+		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
+		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
+		Iterator it = pgpSec.getPublicKey().getUserIDs();
+		if (it.hasNext())
+		{
+			spGen.setSignerUserID(false, (String)it.next());
+			sGen.setHashedSubpackets(spGen.generate());
+		}
+		PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
+		BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(out));
+		sGen.generateOnePassVersion(false).encode(bOut);
+		PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+		int ch;
+		while ((ch = in.read()) >= 0)
+		{
+			out.write(ch);
+			sGen.update((byte)ch);
+		}
+		lGen.close();
+		sGen.generate().encode(bOut);
+		cGen.close();
+		if (armor)
+		{
+			out.close();
+		}
 	}
 
 	/**
