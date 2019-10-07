@@ -2,10 +2,13 @@ package com.adaptris.security.pgp;
 
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.AdaptrisMessageFactory;
+import com.adaptris.core.MetadataElement;
 import com.adaptris.core.common.ConstantDataInputParameter;
+import com.adaptris.core.common.MetadataDataInputParameter;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.MetadataStreamOutputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
+import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.core.common.StringPayloadDataInputParameter;
 import com.adaptris.core.common.StringPayloadDataOutputParameter;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -14,11 +17,13 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 
 public class PGPSignatureTests extends PGPTests
 {
+	@Test
 	public void testSignatureDetached() throws Exception
 	{
 		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
@@ -26,9 +31,8 @@ public class PGPSignatureTests extends PGPTests
 
 		sign.doService(message);
 
-		String signature = message.getMetadataValue("signature");
-		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
-		message.addMetadata("signature", signature);
+		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getContent());
+		message.addMetadata("message", MESSAGE);
 		PGPVerifyService verify = getVerifyService(publicKey, true);
 
 		verify.doService(message);
@@ -36,6 +40,24 @@ public class PGPSignatureTests extends PGPTests
 		Assert.assertEquals(MESSAGE, message.getContent());
 	}
 
+	@Test
+	public void testSignatureDetachedNoArmor() throws Exception
+	{
+		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+		PGPSignService sign = getSignService(privateKey, PASSPHRASE, true, false);
+
+		sign.doService(message);
+
+		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+		message.addMetadata("message", MESSAGE);
+		PGPVerifyService verify = getVerifyService(publicKey, true);
+
+		verify.doService(message);
+
+		Assert.assertEquals(MESSAGE, message.getContent());
+	}
+
+	@Test
 	public void testSignatureClear() throws Exception
 	{
 		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
@@ -59,7 +81,7 @@ public class PGPSignatureTests extends PGPTests
 		service.setDataToSign(new PayloadStreamInputParameter());
 		service.setDetachedSignature(detached);
 		service.setArmorEncoding(armor);
-		service.setSignature(detached ? new MetadataStreamOutputParameter("signature") : new StringPayloadDataOutputParameter());
+		service.setSignature(detached ? new PayloadStreamOutputParameter() : new StringPayloadDataOutputParameter());
 		return service;
 	}
 
@@ -67,8 +89,9 @@ public class PGPSignatureTests extends PGPTests
 	{
 		PGPVerifyService service = new PGPVerifyService();
 		service.setKey(new ConstantDataInputParameter(getKey(key)));
-		service.setSignedMessage(new PayloadStreamInputParameter());
-		service.setSignature(detached ? new MetadataStreamInputParameter("signature") : null);
+		service.setSignedMessage(detached ? new MetadataDataInputParameter("message") : new PayloadStreamInputParameter());
+		service.setSignature(detached ? new PayloadStreamInputParameter() : null);
+		service.setUnsignedMessage(new StringPayloadDataOutputParameter());
 		return service;
 	}
 

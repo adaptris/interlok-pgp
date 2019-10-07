@@ -105,25 +105,25 @@ public class PGPVerifyService extends ServiceImp
 				}
 			}
 
+			ByteArrayOutputStream unsignedMessage = new ByteArrayOutputStream();
+
 			if (signature != null)
 			{
-				verifyDetached((InputStream)data, (InputStream)signature, (InputStream)key);
+				verifyDetached((InputStream)data, (InputStream)signature, (InputStream)key, unsignedMessage);
 			}
 			else
 			{
-				ByteArrayOutputStream unsignedMessage = new ByteArrayOutputStream();
-
 				verifyClear((InputStream)data, (InputStream)key, unsignedMessage);
+			}
 
-				try
-				{
-					this.unsignedMessage.insert(unsignedMessage.toString(CHARSET.toString()), message);
-				}
-				catch (ClassCastException e)
-				{
-					/* this.unsignedMessage was not expecting a String, must be an InputStreamWithEncoding */
-					this.unsignedMessage.insert(new InputStreamWithEncoding(new ByteArrayInputStream(unsignedMessage.toByteArray()), null), message);
-				}
+			try
+			{
+				this.unsignedMessage.insert(unsignedMessage.toString(CHARSET.toString()), message);
+			}
+			catch (ClassCastException e)
+			{
+				/* this.unsignedMessage was not expecting a String, must be an InputStreamWithEncoding */
+				this.unsignedMessage.insert(new InputStreamWithEncoding(new ByteArrayInputStream(unsignedMessage.toByteArray()), null), message);
 			}
 		}
 		catch (Exception e)
@@ -305,7 +305,7 @@ public class PGPVerifyService extends ServiceImp
 		}
 	}
 
-	private static void verifyDetached(InputStream inMessage, InputStream inSignature, InputStream key) throws Exception
+	private static void verifyDetached(InputStream inMessage, InputStream inSignature, InputStream key, ByteArrayOutputStream out) throws Exception
 	{
 		inSignature = Utils.getDecoderStream(inSignature);
 		JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(inSignature);
@@ -329,6 +329,7 @@ public class PGPVerifyService extends ServiceImp
 		while ((ch = inMessage.read()) >= 0)
 		{
 			sig.update((byte)ch);
+			out.write((byte)ch);
 		}
 		inMessage.close();
 		if (!sig.verify())
