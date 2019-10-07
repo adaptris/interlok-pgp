@@ -275,7 +275,7 @@ public class PGPEncryptService extends ServiceImp
 	 */
 	private static PGPPublicKey readPublicKey(InputStream input) throws IOException, PGPException
 	{
-		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
+		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(Utils.getDecoderStream(input), new JcaKeyFingerprintCalculator());
 		//
 		// we just loop through the collection till we find a key suitable for encryption, in the real
 		// world you would probably want to be a bit smarter about this.

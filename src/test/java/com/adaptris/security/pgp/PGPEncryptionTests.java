@@ -15,14 +15,7 @@ import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
-import org.bouncycastle.openpgp.PGPEncryptedData;
-import org.bouncycastle.openpgp.PGPKeyPair;
-import org.bouncycastle.openpgp.PGPKeyRingGenerator;
-import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyEncryptorBuilder;
@@ -190,7 +183,7 @@ public class PGPEncryptionTests extends PGPTests
 		}
 	}
 
-	private PGPEncryptService getEncryptService(PGPPublicKeyRing key, boolean armor, boolean integrity) throws Exception
+	private PGPEncryptService getEncryptService(PGPPublicKey key, boolean armor, boolean integrity) throws Exception
 	{
 		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
 		ArmoredOutputStream armoredKey = new ArmoredOutputStream(keyBytes);
@@ -206,7 +199,7 @@ public class PGPEncryptionTests extends PGPTests
 		return service;
 	}
 
-	private PGPDecryptService getDecryptService(PGPSecretKeyRing key, String passphrase, boolean armor) throws Exception
+	private PGPDecryptService getDecryptService(PGPSecretKey key, String passphrase, boolean armor) throws Exception
 	{
 		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
 		ArmoredOutputStream armoredKey = new ArmoredOutputStream(keyBytes);
