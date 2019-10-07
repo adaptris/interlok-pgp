@@ -308,6 +308,12 @@ public class PGPSignService extends ServiceImp
 		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
 		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
 		sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, pgpPrivKey);
+		Iterator it = pgpSec.getPublicKey().getUserIDs();
+		if (it.hasNext())
+		{
+			spGen.setSignerUserID(false, (String)it.next());
+			sGen.setHashedSubpackets(spGen.generate());
+		}
 		InputStream fIn = new BufferedInputStream(in);
 		ArmoredOutputStream aOut = new ArmoredOutputStream(out);
 		aOut.beginClearText(digest);
@@ -315,16 +321,16 @@ public class PGPSignService extends ServiceImp
 		// note the last \n/\r/\r\n in the file is ignored
 		//
 		ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
-		int lookAhead = readInputLine(lineOut, fIn);
-		processLine(aOut, sGen, lineOut.toByteArray());
+		int lookAhead = Utils.readInputLine(lineOut, fIn);
+		Utils.processLine(aOut, sGen, lineOut.toByteArray());
 		if (lookAhead != -1)
 		{
 			do
 			{
-				lookAhead = readInputLine(lineOut, lookAhead, fIn);
+				lookAhead = Utils.readInputLine(lineOut, lookAhead, fIn);
 				sGen.update((byte)'\r');
 				sGen.update((byte)'\n');
-				processLine(aOut, sGen, lineOut.toByteArray());
+				Utils.processLine(aOut, sGen, lineOut.toByteArray());
 			}
 			while (lookAhead != -1);
 		}
@@ -402,86 +408,5 @@ public class PGPSignService extends ServiceImp
 			}
 		}
 		throw new IllegalArgumentException("Can't find signing key in key ring");
-	}
-
-	private static int readInputLine(ByteArrayOutputStream bOut, InputStream fIn) throws IOException
-	{
-		bOut.reset();
-		int lookAhead = -1;
-		int ch;
-		while ((ch = fIn.read()) >= 0)
-		{
-			bOut.write(ch);
-			if (ch == '\r' || ch == '\n')
-			{
-				lookAhead = readPassedEOL(bOut, ch, fIn);
-				break;
-			}
-		}
-		return lookAhead;
-	}
-
-	private static int readInputLine(ByteArrayOutputStream bOut, int lookAhead, InputStream fIn) throws IOException
-	{
-		bOut.reset();
-		int ch = lookAhead;
-		do
-		{
-			bOut.write(ch);
-			if (ch == '\r' || ch == '\n')
-			{
-				lookAhead = readPassedEOL(bOut, ch, fIn);
-				break;
-			}
-		}
-		while ((ch = fIn.read()) >= 0);
-		if (ch < 0)
-		{
-			lookAhead = -1;
-		}
-		return lookAhead;
-	}
-
-	private static int readPassedEOL(ByteArrayOutputStream bOut, int lastCh, InputStream fIn) throws IOException
-	{
-		int lookAhead = fIn.read();
-		if (lastCh == '\r' && lookAhead == '\n')
-		{
-			bOut.write(lookAhead);
-			lookAhead = fIn.read();
-		}
-		return lookAhead;
-	}
-
-	private static void processLine(OutputStream aOut, PGPSignatureGenerator sGen, byte[] line) throws SignatureException, IOException
-	{
-		// note: trailing white space needs to be removed from the end of
-		// each line for signature calculation RFC 4880 Section 7.1
-		int length = getLengthWithoutWhiteSpace(line);
-		if (length > 0)
-		{
-			sGen.update(line, 0, length);
-		}
-		aOut.write(line, 0, line.length);
-	}
-
-	private static int getLengthWithoutWhiteSpace(byte[] line)
-	{
-		int    end = line.length - 1;
-		while (end >= 0 && isWhiteSpace(line[end]))
-		{
-			end--;
-		}
-		return end + 1;
-	}
-
-	private static boolean isWhiteSpace(byte b)
-	{
-		return isLineEnding(b) || b == '\t' || b == ' ';
-	}
-
-	private static boolean isLineEnding(byte b)
-	{
-		return b == '\r' || b == '\n';
 	}
 }
