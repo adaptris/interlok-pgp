@@ -352,25 +352,13 @@ public class PGPSignService extends ServiceImp
 		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
 		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
-		Iterator it = pgpSec.getPublicKey().getUserIDs();
-		if (it.hasNext())
-		{
-			spGen.setSignerUserID(false, (String)it.next());
-			sGen.setHashedSubpackets(spGen.generate());
-		}
-		PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
-		BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(out));
-		sGen.generateOnePassVersion(false).encode(bOut);
-		PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+		BCPGOutputStream bOut = new BCPGOutputStream(out);
 		int ch;
 		while ((ch = in.read()) >= 0)
 		{
-			out.write(ch);
 			sGen.update((byte)ch);
 		}
-		lGen.close();
 		sGen.generate().encode(bOut);
-		cGen.close();
 		if (armor)
 		{
 			out.close();
