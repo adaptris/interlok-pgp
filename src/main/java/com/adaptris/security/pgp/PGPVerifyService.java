@@ -1,9 +1,7 @@
 package com.adaptris.security.pgp;
 
 import com.adaptris.core.AdaptrisMessage;
-import com.adaptris.core.CoreException;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.ServiceImp;
 import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
@@ -11,10 +9,7 @@ import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
-import org.apache.commons.io.IOUtils;
 import org.bouncycastle.bcpg.ArmoredInputStream;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -29,27 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
-import java.security.Security;
-import java.security.SignatureException;
 
-public class PGPVerifyService extends ServiceImp
+public class PGPVerifyService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPVerifyService.class);
-
-	private static final Charset CHARSET = Charset.forName("UTF-8");
-
-	static
-	{
-		Security.addProvider(new BouncyCastleProvider());
-	}
 
 	@NotNull
 	@Valid
@@ -213,33 +194,6 @@ public class PGPVerifyService extends ServiceImp
 		return unsignedMessage;
 	}
 
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void initService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void closeService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	public void prepare() throws CoreException
-	{
-		/* unused */
-	}
-
 	private static void verifyClear(InputStream in, InputStream key, ByteArrayOutputStream out) throws Exception
 	{
 		ArmoredInputStream aIn = new ArmoredInputStream(in);
@@ -249,18 +203,18 @@ public class PGPVerifyService extends ServiceImp
 		// each line RFC 4880 Section 7.1
 		//
 		ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
-		int lookAhead = Utils.readInputLine(lineOut, aIn);
-		byte[] lineSep = Utils.getLineSeparator();
+		int lookAhead = readInputLine(lineOut, aIn);
+		byte[] lineSep = getLineSeparator();
 		if (lookAhead != -1 && aIn.isClearText())
 		{
 			byte[] line = lineOut.toByteArray();
-			out.write(line, 0, Utils.getLengthWithoutSeparatorOrTrailingWhitespace(line));
+			out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
 			out.write(lineSep);
 			while (lookAhead != -1 && aIn.isClearText())
 			{
-				lookAhead = Utils.readInputLine(lineOut, lookAhead, aIn);
+				lookAhead = readInputLine(lineOut, lookAhead, aIn);
 				line = lineOut.toByteArray();
-				out.write(line, 0, Utils.getLengthWithoutSeparatorOrTrailingWhitespace(line));
+				out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
 				out.write(lineSep);
 			}
 		}
@@ -270,12 +224,12 @@ public class PGPVerifyService extends ServiceImp
 			if (lookAhead != -1)
 			{
 				byte[] line = lineOut.toByteArray();
-				out.write(line, 0, Utils.getLengthWithoutSeparatorOrTrailingWhitespace(line));
+				out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
 				out.write(lineSep);
 			}
 		}
 		out.close();
-		PGPPublicKeyRingCollection pgpRings = new PGPPublicKeyRingCollection(Utils.getDecoderStream(key), new JcaKeyFingerprintCalculator());
+		PGPPublicKeyRingCollection pgpRings = new PGPPublicKeyRingCollection(getDecoderStream(key), new JcaKeyFingerprintCalculator());
 		JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(aIn);
 		PGPSignatureList p3 = (PGPSignatureList)pgpFact.nextObject();
 		PGPSignature sig = p3.get(0);
@@ -285,16 +239,16 @@ public class PGPVerifyService extends ServiceImp
 		// read the input, making sure we ignore the last newline.
 		//
 		InputStream sigIn = new ByteArrayInputStream(out.toByteArray());
-		lookAhead = Utils.readInputLine(lineOut, sigIn);
-		Utils.processLine(sig, lineOut.toByteArray());
+		lookAhead = readInputLine(lineOut, sigIn);
+		processLine(sig, lineOut.toByteArray());
 		if (lookAhead != -1)
 		{
 			do
 			{
-				lookAhead = Utils.readInputLine(lineOut, lookAhead, sigIn);
+				lookAhead = readInputLine(lineOut, lookAhead, sigIn);
 				sig.update((byte)'\r');
 				sig.update((byte)'\n');
-				Utils.processLine(sig, lineOut.toByteArray());
+				processLine(sig, lineOut.toByteArray());
 			}
 			while (lookAhead != -1);
 		}
@@ -307,7 +261,7 @@ public class PGPVerifyService extends ServiceImp
 
 	private static void verifyDetached(InputStream inMessage, InputStream inSignature, InputStream key, ByteArrayOutputStream out) throws Exception
 	{
-		inSignature = Utils.getDecoderStream(inSignature);
+		inSignature = getDecoderStream(inSignature);
 		JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(inSignature);
 		PGPSignatureList p3;
 		Object o = pgpFact.nextObject();
@@ -321,7 +275,7 @@ public class PGPVerifyService extends ServiceImp
 		{
 			p3 = (PGPSignatureList)o;
 		}
-		PGPPublicKeyRingCollection pgpPubRingCollection = new PGPPublicKeyRingCollection(Utils.getDecoderStream(key), new JcaKeyFingerprintCalculator());
+		PGPPublicKeyRingCollection pgpPubRingCollection = new PGPPublicKeyRingCollection(getDecoderStream(key), new JcaKeyFingerprintCalculator());
 		PGPSignature sig = p3.get(0);
 		PGPPublicKey pubKey = pgpPubRingCollection.getPublicKey(sig.getKeyID());
 		sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);

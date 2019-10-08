@@ -6,15 +6,16 @@ import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.ServiceImp;
-import com.adaptris.core.common.*;
+import com.adaptris.core.common.InputStreamWithEncoding;
+import com.adaptris.core.common.MetadataStreamInputParameter;
+import com.adaptris.core.common.PayloadStreamInputParameter;
+import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.lang.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
@@ -25,27 +26,21 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
 
 @XStreamAlias("pgp-encryption")
 @AdapterComponent
 @ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key")
-public class PGPEncryptService extends ServiceImp
+public class PGPEncryptService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPEncryptService.class);
-
-	private static final Charset CHARSET = Charset.forName("UTF-8");
-
-	static
-	{
-		Security.addProvider(new BouncyCastleProvider());
-	}
 
 	@NotNull
 	@Valid
@@ -217,33 +212,6 @@ public class PGPEncryptService extends ServiceImp
 		return integrityCheck;
 	}
 
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void initService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void closeService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	public void prepare()
-	{
-		/* unused */
-	}
-
 	private static void encrypt(InputStream in, OutputStream out, InputStream encKey, boolean armor, boolean withIntegrityCheck) throws PGPException, IOException
 	{
 		if (armor)
@@ -275,7 +243,7 @@ public class PGPEncryptService extends ServiceImp
 	 */
 	private static PGPPublicKey readPublicKey(InputStream input) throws IOException, PGPException
 	{
-		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(Utils.getDecoderStream(input), new JcaKeyFingerprintCalculator());
+		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(getDecoderStream(input), new JcaKeyFingerprintCalculator());
 		//
 		// we just loop through the collection till we find a key suitable for encryption, in the real
 		// world you would probably want to be a bit smarter about this.

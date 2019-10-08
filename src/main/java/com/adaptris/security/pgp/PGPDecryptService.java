@@ -4,7 +4,6 @@ import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.ServiceImp;
 import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
@@ -14,41 +13,33 @@ import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.io.IOUtils;
-import org.bouncycastle.bcpg.ArmoredInputStream;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.NoSuchProviderException;
-import java.security.Security;
 import java.util.Iterator;
 
 @XStreamAlias("pgp-decryption")
 @AdapterComponent
 @ComponentProfile(summary = "Decrypt data using a PGP/GPG private key", tag = "pgp,gpg,decrypt,private key")
-public class PGPDecryptService extends ServiceImp
+public class PGPDecryptService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPDecryptService.class);
-
-	private static final Charset CHARSET = Charset.forName("UTF-8");
-
-	static
-	{
-		Security.addProvider(new BouncyCastleProvider());
-	}
 
 	@NotNull
 	@Valid
@@ -205,36 +196,9 @@ public class PGPDecryptService extends ServiceImp
 		return clearText;
 	}
 
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void initService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void closeService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	public void prepare()
-	{
-		/* unused */
-	}
-
 	private static void decrypt(InputStream in, InputStream key, char[] passwd, OutputStream out) throws PGPException, IOException, NoSuchProviderException
 	{
-		in = Utils.getDecoderStream(in);
+		in = getDecoderStream(in);
 		JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
 		PGPEncryptedDataList enc;
 		Object o = pgpF.nextObject();
@@ -255,7 +219,7 @@ public class PGPDecryptService extends ServiceImp
 		Iterator it = enc.getEncryptedDataObjects();
 		PGPPrivateKey sKey = null;
 		PGPPublicKeyEncryptedData pbe = null;
-		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(Utils.getDecoderStream(key), new JcaKeyFingerprintCalculator());
+		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(getDecoderStream(key), new JcaKeyFingerprintCalculator());
 		while (sKey == null && it.hasNext())
 		{
 			pbe = (PGPPublicKeyEncryptedData)it.next();

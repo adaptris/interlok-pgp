@@ -1,6 +1,8 @@
 package com.adaptris.security.pgp;
 
+import com.adaptris.core.ServiceImp;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.util.Strings;
@@ -12,11 +14,47 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.security.Security;
 import java.security.SignatureException;
 
-class Utils
+abstract class PGPService extends ServiceImp
 {
 	private static final int READ_AHEAD = 60;
+
+	protected static final Charset CHARSET = Charset.forName("UTF-8");
+
+	static
+	{
+		Security.addProvider(new BouncyCastleProvider());
+	}
+
+	/**
+	 * {@inheritDoc}.
+	 */
+	@Override
+	protected void initService()
+	{
+		/* unused */
+	}
+
+	/**
+	 * {@inheritDoc}.
+	 */
+	@Override
+	protected void closeService()
+	{
+		/* unused */
+	}
+
+	/**
+	 * {@inheritDoc}.
+	 */
+	@Override
+	public void prepare()
+	{
+		/* unused */
+	}
 
 	/**
 	 * Obtains a stream that can be used to read PGP data from the provided stream.
@@ -31,7 +69,7 @@ class Utils
 	 * @throws IOException if an error occurs reading the stream, or initialising the
 	 *                     {@link ArmoredInputStream}.
 	 */
-	static InputStream getDecoderStream(InputStream in) throws IOException
+	protected static InputStream getDecoderStream(InputStream in) throws IOException
 	{
 		if (!in.markSupported())
 		{
@@ -124,11 +162,11 @@ class Utils
 		}
 	}
 
-	static void processLine(OutputStream aOut, PGPSignatureGenerator sGen, byte[] line) throws SignatureException, IOException
+	protected static void processLine(OutputStream aOut, PGPSignatureGenerator sGen, byte[] line) throws SignatureException, IOException
 	{
 		// note: trailing white space needs to be removed from the end of
 		// each line for signature calculation RFC 4880 Section 7.1
-		int length = Utils.getLengthWithoutWhiteSpace(line);
+		int length = PGPService.getLengthWithoutWhiteSpace(line);
 		if (length > 0)
 		{
 			sGen.update(line, 0, length);
@@ -136,16 +174,16 @@ class Utils
 		aOut.write(line, 0, line.length);
 	}
 
-	static void processLine(PGPSignature sig, byte[] line) throws SignatureException, IOException
+	protected static void processLine(PGPSignature sig, byte[] line) throws SignatureException, IOException
 	{
-		int length = Utils.getLengthWithoutWhiteSpace(line);
+		int length = PGPService.getLengthWithoutWhiteSpace(line);
 		if (length > 0)
 		{
 			sig.update(line, 0, length);
 		}
 	}
 
-	static int getLengthWithoutWhiteSpace(byte[] line)
+	protected static int getLengthWithoutWhiteSpace(byte[] line)
 	{
 		int    end = line.length - 1;
 		while (end >= 0 && isWhiteSpace(line[end]))
@@ -155,7 +193,7 @@ class Utils
 		return end + 1;
 	}
 
-	static int getLengthWithoutSeparatorOrTrailingWhitespace(byte[] line)
+	protected static int getLengthWithoutSeparatorOrTrailingWhitespace(byte[] line)
 	{
 		int    end = line.length - 1;
 
@@ -167,7 +205,7 @@ class Utils
 		return end + 1;
 	}
 
-	static byte[] getLineSeparator()
+	protected static byte[] getLineSeparator()
 	{
 		String nl = Strings.lineSeparator();
 		byte[] nlBytes = new byte[nl.length()];
@@ -190,7 +228,7 @@ class Utils
 		return b == '\r' || b == '\n';
 	}
 
-	static int readInputLine(ByteArrayOutputStream bOut, InputStream fIn) throws IOException
+	protected static int readInputLine(ByteArrayOutputStream bOut, InputStream fIn) throws IOException
 	{
 		bOut.reset();
 		int lookAhead = -1;
@@ -207,7 +245,7 @@ class Utils
 		return lookAhead;
 	}
 
-	static int readInputLine(ByteArrayOutputStream bOut, int lookAhead, InputStream fIn) throws IOException
+	protected static int readInputLine(ByteArrayOutputStream bOut, int lookAhead, InputStream fIn) throws IOException
 	{
 		bOut.reset();
 		int ch = lookAhead;

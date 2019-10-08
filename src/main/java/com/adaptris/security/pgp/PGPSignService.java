@@ -5,14 +5,11 @@ import com.adaptris.annotation.AdvancedConfig;
 import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
-import com.adaptris.core.CoreException;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.ServiceImp;
 import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.MetadataDataOutputParameter;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
@@ -22,8 +19,14 @@ import org.apache.commons.lang.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -38,29 +41,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
-import java.security.NoSuchProviderException;
-import java.security.Security;
 import java.security.SignatureException;
 import java.util.Iterator;
 
 @XStreamAlias("pgp-signature")
 @AdapterComponent
 @ComponentProfile(summary = "Sign data using a PGP/GPG private key", tag = "pgp,gpg,sign,signature,private key")
-public class PGPSignService extends ServiceImp
+public class PGPSignService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPSignService.class);
 
-	private static final Charset CHARSET = Charset.forName("UTF-8");
-
 	/* TODO digest could be an advanced option */
 	private static final int DIGEST = HashAlgorithmTags.SHA256;
-
-	static
-	{
-		Security.addProvider(new BouncyCastleProvider());
-	}
 
 	@NotNull
 	@Valid
@@ -274,33 +266,6 @@ public class PGPSignService extends ServiceImp
 		return signature;
 	}
 
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void initService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	protected void closeService()
-	{
-		/* unused */
-	}
-
-	/**
-	 * {@inheritDoc}.
-	 */
-	@Override
-	public void prepare() throws CoreException
-	{
-		/* unused */
-	}
-
 	private static void signClear(InputStream in, InputStream key, char[] passwd, int digest, OutputStream out) throws PGPException, IOException, SignatureException
 	{
 		PGPSecretKey pgpSec = readSecretKey(key);
@@ -321,16 +286,16 @@ public class PGPSignService extends ServiceImp
 		// note the last \n/\r/\r\n in the file is ignored
 		//
 		ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
-		int lookAhead = Utils.readInputLine(lineOut, fIn);
-		Utils.processLine(aOut, sGen, lineOut.toByteArray());
+		int lookAhead = readInputLine(lineOut, fIn);
+		processLine(aOut, sGen, lineOut.toByteArray());
 		if (lookAhead != -1)
 		{
 			do
 			{
-				lookAhead = Utils.readInputLine(lineOut, lookAhead, fIn);
+				lookAhead = readInputLine(lineOut, lookAhead, fIn);
 				sGen.update((byte)'\r');
 				sGen.update((byte)'\n');
-				Utils.processLine(aOut, sGen, lineOut.toByteArray());
+				processLine(aOut, sGen, lineOut.toByteArray());
 			}
 			while (lookAhead != -1);
 		}
@@ -375,7 +340,7 @@ public class PGPSignService extends ServiceImp
 	 */
 	private static PGPSecretKey readSecretKey(InputStream input) throws IOException, PGPException
 	{
-		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(Utils.getDecoderStream(input), new JcaKeyFingerprintCalculator());
+		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(getDecoderStream(input), new JcaKeyFingerprintCalculator());
 		//
 		// we just loop through the collection till we find a key suitable for encryption, in the real
 		// world you would probably want to be a bit smarter about this.
