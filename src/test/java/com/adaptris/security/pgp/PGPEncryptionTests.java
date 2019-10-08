@@ -132,7 +132,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
 	@Test
-	public void testDecryptionKeyException()
+	public void testDecryptionKeyParameterException()
 	{
 		try
 		{
@@ -140,6 +140,30 @@ public class PGPEncryptionTests extends PGPTests
 			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
 			service.setKey(new ConstantDataInputParameter());
 			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testDecryptionWrongKeyException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPEncryptService encrypt = getEncryptService(publicKey, true, true);
+
+			encrypt.doService(message);
+
+			message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+			/* recall setUp to get a new/wrong private key */
+			setUp();
+			PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
+
+			decrypt.doService(message);
 			fail();
 		}
 		catch (Exception e)

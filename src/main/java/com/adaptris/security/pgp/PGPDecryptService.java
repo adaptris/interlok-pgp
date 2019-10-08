@@ -315,7 +315,7 @@ public class PGPDecryptService extends ServiceImp
 	 * @throws PGPException
 	 * @throws NoSuchProviderException
 	 */
-	static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass) throws PGPException, NoSuchProviderException
+	private static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass) throws PGPException, NoSuchProviderException
 	{
 		PGPSecretKey pgpSecKey = pgpSec.getSecretKey(keyID);
 		if (pgpSecKey == null)

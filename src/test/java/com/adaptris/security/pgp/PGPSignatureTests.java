@@ -193,6 +193,55 @@ public class PGPSignatureTests extends PGPTests
 		}
 	}
 
+	@Test
+	public void testSignatureFailureDetached()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPSignService sign = getSignService(privateKey, PASSPHRASE, true, true);
+
+			sign.doService(message);
+
+			message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+			message.addMetadata("message", MESSAGE.replace('g', 'z'));
+			PGPVerifyService verify = getVerifyService(publicKey, true);
+
+			verify.doService(message);
+
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testSignatureFailureClear()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPSignService sign = getSignService(privateKey, PASSPHRASE, false, true);
+
+			sign.doService(message);
+
+			byte[] signedMessage = message.getPayload();
+			signedMessage[signedMessage.length / 2] += 1;
+
+			message = AdaptrisMessageFactory.getDefaultInstance().newMessage(signedMessage);
+			PGPVerifyService verify = getVerifyService(publicKey, false);
+
+			verify.doService(message);
+
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
 
 	private PGPSignService getSignService(PGPSecretKey key, String passphrase, boolean detached, boolean armor) throws Exception
 	{
