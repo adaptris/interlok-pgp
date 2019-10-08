@@ -34,7 +34,7 @@ import java.io.OutputStream;
 import java.security.NoSuchProviderException;
 import java.util.Iterator;
 
-@XStreamAlias("pgp-decryption")
+@XStreamAlias("pgp-decrypt")
 @AdapterComponent
 @ComponentProfile(summary = "Decrypt data using a PGP/GPG private key", tag = "pgp,gpg,decrypt,private key")
 public class PGPDecryptService extends PGPService
@@ -43,7 +43,7 @@ public class PGPDecryptService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter key = new MetadataStreamInputParameter();
+	private DataInputParameter privateKey = new MetadataStreamInputParameter();
 
 	@NotNull
 	@Valid
@@ -65,7 +65,7 @@ public class PGPDecryptService extends PGPService
 	{
 		try
 		{
-			Object key = this.key.extract(message);
+			Object key = this.privateKey.extract(message);
 			if (key instanceof String)
 			{
 				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
@@ -119,11 +119,11 @@ public class PGPDecryptService extends PGPService
 	/**
 	 * Set the private key for decryption.
 	 *
-	 * @param key The private key.
+	 * @param privateKey The private key.
 	 */
-	public void setKey(DataInputParameter key)
+	public void setPrivateKey(DataInputParameter privateKey)
 	{
-		this.key = key;
+		this.privateKey = privateKey;
 	}
 
 	/**
@@ -131,9 +131,9 @@ public class PGPDecryptService extends PGPService
 	 *
 	 * @return The private key.
 	 */
-	public DataInputParameter getKey()
+	public DataInputParameter getPrivateKey()
 	{
-		return key;
+		return privateKey;
 	}
 
 	/**

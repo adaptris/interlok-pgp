@@ -44,7 +44,7 @@ import java.io.OutputStream;
 import java.security.SignatureException;
 import java.util.Iterator;
 
-@XStreamAlias("pgp-signature")
+@XStreamAlias("pgp-sign")
 @AdapterComponent
 @ComponentProfile(summary = "Sign data using a PGP/GPG private key", tag = "pgp,gpg,sign,signature,private key")
 public class PGPSignService extends PGPService
@@ -56,7 +56,7 @@ public class PGPSignService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter key = new MetadataStreamInputParameter();
+	private DataInputParameter privateKey = new MetadataStreamInputParameter();
 
 	@NotNull
 	@Valid
@@ -88,7 +88,7 @@ public class PGPSignService extends PGPService
 	{
 		try
 		{
-			Object key = this.key.extract(message);
+			Object key = this.privateKey.extract(message);
 			if (key instanceof String)
 			{
 				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
@@ -149,11 +149,11 @@ public class PGPSignService extends PGPService
 	/**
 	 * Set the private key for decryption.
 	 *
-	 * @param key The private key.
+	 * @param privateKey The private key.
 	 */
-	public void setKey(DataInputParameter key)
+	public void setPrivateKey(DataInputParameter privateKey)
 	{
-		this.key = key;
+		this.privateKey = privateKey;
 	}
 
 	/**
@@ -161,9 +161,9 @@ public class PGPSignService extends PGPService
 	 *
 	 * @return The private key.
 	 */
-	public DataInputParameter getKey()
+	public DataInputParameter getPrivateKey()
 	{
-		return key;
+		return privateKey;
 	}
 
 	/**

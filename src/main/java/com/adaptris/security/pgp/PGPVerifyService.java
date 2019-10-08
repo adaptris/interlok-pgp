@@ -1,5 +1,7 @@
 package com.adaptris.security.pgp;
 
+import com.adaptris.annotation.AdapterComponent;
+import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
 import com.adaptris.core.common.InputStreamWithEncoding;
@@ -9,6 +11,7 @@ import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPException;
@@ -28,13 +31,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
+@XStreamAlias("pgp-verify")
+@AdapterComponent
+@ComponentProfile(summary = "Verify sign data using a PGP/GPG public key", tag = "pgp,gpg,sign,signature,verify,public key")
 public class PGPVerifyService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPVerifyService.class);
 
 	@NotNull
 	@Valid
-	private DataInputParameter key = new MetadataStreamInputParameter();
+	private DataInputParameter publicKey = new MetadataStreamInputParameter();
 
 	@NotNull
 	@Valid
@@ -54,7 +60,7 @@ public class PGPVerifyService extends PGPService
 	{
 		try
 		{
-			Object key = this.key.extract(message);
+			Object key = this.publicKey.extract(message);
 			if (key instanceof String)
 			{
 				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
@@ -117,11 +123,11 @@ public class PGPVerifyService extends PGPService
 	/**
 	 * Set the private key for decryption.
 	 *
-	 * @param key The private key.
+	 * @param publicKey The private key.
 	 */
-	public void setKey(DataInputParameter key)
+	public void setPublicKey(DataInputParameter publicKey)
 	{
-		this.key = key;
+		this.publicKey = publicKey;
 	}
 
 	/**
@@ -129,9 +135,9 @@ public class PGPVerifyService extends PGPService
 	 *
 	 * @return The private key.
 	 */
-	public DataInputParameter getKey()
+	public DataInputParameter getPublicKey()
 	{
-		return key;
+		return publicKey;
 	}
 
 	/**

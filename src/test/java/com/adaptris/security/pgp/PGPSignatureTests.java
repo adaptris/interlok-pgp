@@ -72,7 +72,7 @@ public class PGPSignatureTests extends PGPTests
 		{
 			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
 			PGPSignService service = getSignService(privateKey, PASSPHRASE,true, true);
-			service.setKey(new ConstantDataInputParameter());
+			service.setPrivateKey(new ConstantDataInputParameter());
 			service.doService(message);
 			fail();
 		}
@@ -124,7 +124,7 @@ public class PGPSignatureTests extends PGPTests
 		{
 			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
 			PGPVerifyService service = getVerifyService(publicKey, false);
-			service.setKey(new ConstantDataInputParameter());
+			service.setPublicKey(new ConstantDataInputParameter());
 			service.doService(message);
 			fail();
 		}
@@ -238,7 +238,7 @@ public class PGPSignatureTests extends PGPTests
 	private PGPSignService getSignService(PGPSecretKey key, String passphrase, boolean detached, boolean armor) throws Exception
 	{
 		PGPSignService service = new PGPSignService();
-		service.setKey(new ConstantDataInputParameter(getKey(key)));
+		service.setPrivateKey(new ConstantDataInputParameter(getKey(key)));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
 		service.setDataToSign(detached ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setDetachedSignature(detached);
@@ -250,7 +250,7 @@ public class PGPSignatureTests extends PGPTests
 	private PGPVerifyService getVerifyService(PGPPublicKey key, boolean detached) throws Exception
 	{
 		PGPVerifyService service = new PGPVerifyService();
-		service.setKey(new ConstantDataInputParameter(getKey(key)));
+		service.setPublicKey(new ConstantDataInputParameter(getKey(key)));
 		service.setSignedMessage(detached ? new MetadataDataInputParameter("message") : new PayloadStreamInputParameter());
 		service.setSignature(detached ? new PayloadStreamInputParameter() : null);
 		service.setUnsignedMessage(detached ? new StringPayloadDataOutputParameter() : new PayloadStreamOutputParameter());

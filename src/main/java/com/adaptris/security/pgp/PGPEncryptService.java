@@ -35,7 +35,7 @@ import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Iterator;
 
-@XStreamAlias("pgp-encryption")
+@XStreamAlias("pgp-encrypt")
 @AdapterComponent
 @ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key")
 public class PGPEncryptService extends PGPService
@@ -44,7 +44,7 @@ public class PGPEncryptService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter key = new MetadataStreamInputParameter();
+	private DataInputParameter publicKey = new MetadataStreamInputParameter();
 
 	@NotNull
 	@Valid
@@ -72,7 +72,7 @@ public class PGPEncryptService extends PGPService
 	{
 		try
 		{
-			Object key = this.key.extract(message);
+			Object key = this.publicKey.extract(message);
 			if (key instanceof String)
 			{
 				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
@@ -115,11 +115,11 @@ public class PGPEncryptService extends PGPService
 	/**
 	 * Set the public key for encryption.
 	 *
-	 * @param key The public key.
+	 * @param publicKey The public key.
 	 */
-	public void setKey(DataInputParameter key)
+	public void setPublicKey(DataInputParameter publicKey)
 	{
-		this.key = key;
+		this.publicKey = publicKey;
 	}
 
 	/**
@@ -127,9 +127,9 @@ public class PGPEncryptService extends PGPService
 	 *
 	 * @return The public key.
 	 */
-	public DataInputParameter getKey()
+	public DataInputParameter getPublicKey()
 	{
-		return key;
+		return publicKey;
 	}
 
 	/**

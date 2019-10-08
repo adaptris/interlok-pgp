@@ -88,7 +88,7 @@ public class PGPEncryptionTests extends PGPTests
 		{
 			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
 			PGPEncryptService service = getEncryptService(publicKey, false, false);
-			service.setKey(new ConstantDataInputParameter());
+			service.setPublicKey(new ConstantDataInputParameter());
 			service.doService(message);
 			fail();
 		}
@@ -122,7 +122,7 @@ public class PGPEncryptionTests extends PGPTests
 		{
 			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
 			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
-			service.setKey(new ConstantDataInputParameter());
+			service.setPrivateKey(new ConstantDataInputParameter());
 			service.doService(message);
 			fail();
 		}
@@ -199,7 +199,7 @@ public class PGPEncryptionTests extends PGPTests
 		armoredKey.close();
 
 		PGPEncryptService service = new PGPEncryptService();
-		service.setKey(new ConstantDataInputParameter(keyBytes.toString()));
+		service.setPublicKey(new ConstantDataInputParameter(keyBytes.toString()));
 		service.setClearText(new StringPayloadDataInputParameter());
 		service.setCipherText(armor ? new StringPayloadDataOutputParameter() : new PayloadStreamOutputParameter());
 		service.setArmorEncoding(armor);
@@ -215,7 +215,7 @@ public class PGPEncryptionTests extends PGPTests
 		armoredKey.close();
 
 		PGPDecryptService service = new PGPDecryptService();
-		service.setKey(new ConstantDataInputParameter(keyBytes.toString()));
+		service.setPrivateKey(new ConstantDataInputParameter(keyBytes.toString()));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
 		service.setCipherText(armor ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setClearText(new StringPayloadDataOutputParameter());
