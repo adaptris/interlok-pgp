@@ -73,12 +73,133 @@ public class PGPSignatureTests extends PGPTests
 		Assert.assertEquals(MESSAGE, message.getContent());
 	}
 
+	@Test
+	public void testSignKeyException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPSignService service = getSignService(privateKey, PASSPHRASE,true, true);
+			service.setKey(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testSignPassphraseException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPSignService service = getSignService(privateKey, PASSPHRASE, true, true);
+			service.setPassphrase(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testSignDataException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(PASSPHRASE);
+			PGPSignService service = getSignService(privateKey, PASSPHRASE, true, true);
+			service.setPassphrase(new PayloadStreamInputParameter());
+			service.setDataToSign(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testVerifyKeyException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPVerifyService service = getVerifyService(publicKey, false);
+			service.setKey(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testVerifySignedMessageException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPVerifyService service = getVerifyService(publicKey, false);
+			service.setSignedMessage(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testVerifySignatureNullException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPVerifyService service = getVerifyService(publicKey, false);
+			service.setSignature(new ConstantDataInputParameter());
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+	@Test
+	public void testVerifySignatureEmptyException()
+	{
+		try
+		{
+			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			PGPVerifyService service = getVerifyService(publicKey, false);
+			service.setSignature(new ConstantDataInputParameter(""));
+			service.doService(message);
+			fail();
+		}
+		catch (Exception e)
+		{
+			/* expected */
+		}
+	}
+
+
 	private PGPSignService getSignService(PGPSecretKey key, String passphrase, boolean detached, boolean armor) throws Exception
 	{
 		PGPSignService service = new PGPSignService();
 		service.setKey(new ConstantDataInputParameter(getKey(key)));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
-		service.setDataToSign(new PayloadStreamInputParameter());
+		service.setDataToSign(detached ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setDetachedSignature(detached);
 		service.setArmorEncoding(armor);
 		service.setSignature(detached ? new PayloadStreamOutputParameter() : new StringPayloadDataOutputParameter());
@@ -91,7 +212,7 @@ public class PGPSignatureTests extends PGPTests
 		service.setKey(new ConstantDataInputParameter(getKey(key)));
 		service.setSignedMessage(detached ? new MetadataDataInputParameter("message") : new PayloadStreamInputParameter());
 		service.setSignature(detached ? new PayloadStreamInputParameter() : null);
-		service.setUnsignedMessage(new StringPayloadDataOutputParameter());
+		service.setUnsignedMessage(detached ? new StringPayloadDataOutputParameter() : new PayloadStreamOutputParameter());
 		return service;
 	}
 

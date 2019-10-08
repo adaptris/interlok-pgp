@@ -98,7 +98,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
 	@Test
-	public void testEncryptionKeyException() throws Exception
+	public void testEncryptionKeyException()
 	{
 		try
 		{
@@ -115,7 +115,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
 	@Test
-	public void testEncryptionDataException() throws Exception
+	public void testEncryptionDataException()
 	{
 		try
 		{
@@ -132,7 +132,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
 	@Test
-	public void testDecryptionKeyException() throws Exception
+	public void testDecryptionKeyException()
 	{
 		try
 		{
@@ -149,7 +149,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
 	@Test
-	public void testDecryptionPassphraseException() throws Exception
+	public void testDecryptionPassphraseException()
 	{
 		try
 		{
@@ -166,7 +166,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
 	@Test
-	public void testDecryptionDataException() throws Exception
+	public void testDecryptionDataException()
 	{
 		try
 		{
