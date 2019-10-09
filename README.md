@@ -10,6 +10,7 @@ requires a public key or the intended recipient, and a message to
 encrypt. Optionally it will ASCII armor encode the cipher text
 (default), and include extra integrity checks (default).
 
+````xml
     <pgp-encrypt>
         <unique-id>mad-lalande</unique-id>
         <public-key class="constant-data-input-parameter">
@@ -23,6 +24,7 @@ encrypt. Optionally it will ASCII armor encode the cipher text
         <armor-encoding>true</armor-encoding>
         <integrity-check>true</integrity-check>
     </pgp-encrypt>
+````
 
 ## PGP Decrypt
 
@@ -32,6 +34,7 @@ and (if the signature is detached) the signature. It will will also
 optionally return the original/unsigned message (especially useful if
 the signature was not detached).
 
+````xml
     <pgp-decrypt>
         <unique-id>trusting-mayer</unique-id>
         <private-key class="constant-data-input-parameter">
@@ -46,6 +49,7 @@ the signature was not detached).
         <cipher-text class="stream-payload-input-parameter"/>
         <clear-text class="stream-payload-output-parameter"/>
     </pgp-decrypt>
+````
 
 ## PGP Sign
 
@@ -54,6 +58,7 @@ private key, the passphrase to unlock the key, and a message to sign.
 Optionally it will ASCII armor encode the signature (default) and create
 a detached signature (default).
 
+````xml
     <pgp-sign>
         <unique-id>nostalgic-golick</unique-id>
         <private-key class="constant-data-input-parameter">
@@ -72,6 +77,7 @@ a detached signature (default).
             <metadata-key>signature</metadata-key>
         </signature>
     </pgp-sign>
+````
 
 ## PGP Verify
 
@@ -79,6 +85,7 @@ This service provides a way to decrypt GPG/PGP encrypted messages.  It
 requires a private key, the passphrase to unlock the key, and an
 encrypted message.
 
+````xml
     <pgp-verify>
         <unique-id>jovial-elion</unique-id>
         <public-key class="constant-data-input-parameter">
@@ -93,3 +100,4 @@ encrypted message.
         </signature>
         <original-message class="string-payload-data-output-parameter"/>
     </pgp-verify>
+````
