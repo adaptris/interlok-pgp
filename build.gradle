@@ -24,12 +24,11 @@ ext {
 
   interlokJavadocs= project.hasProperty('interlokJavadocs') ? project.getProperty('interlokJavadocs') : javadocsBaseUrl + "/interlok-core/" + interlokCoreVersion
   interlokCommonJavadocs= project.hasProperty('interlokCommonJavadocs') ? project.getProperty('interlokCommonJavadocs') : javadocsBaseUrl + "/interlok-common/" + interlokCoreVersion
-  interlokLicenseJavadocs= project.hasProperty('interlokLicenseJavadocs') ? project.getProperty('interlokLicenseJavadocs') : javadocsBaseUrl + "/interlok-licensing/" + interlokCoreVersion
   componentName='Interlok PGP Encryption/Decryption'
   organizationName = "Adaptris Ltd"
   organizationUrl = "http://interlok.adaptris.net"
-  slf4jVersion = '1.7.26'
-  log4j2Version = '2.11.2'
+  slf4jVersion = '1.7.28'
+  log4j2Version = '2.12.1'
 }
 
 if (JavaVersion.current().isJava8Compatible()) {
@@ -74,13 +73,6 @@ def versionDir = "$buildDir/version"
 repositories {
   mavenCentral()
   maven { url "$defaultNexusRepo" }
-  maven {
-      credentials {
-        username repoUsername
-        password repoPassword
-      }
-      url "$nexusBaseUrl/content/groups/private"
-    }
   maven { url "$nexusBaseUrl/content/groups/public" }
   maven { url "$nexusBaseUrl/content/groups/interlok" }
 }
@@ -211,7 +203,6 @@ task umlJavadoc(type: Javadoc) {
   configure(options) {
     options.linksOffline(interlokJavadocs, offlineJavadocPackageDir.getCanonicalPath() + "/interlok-core-$interlokCoreVersion-javadoc.jar")
     options.linksOffline(interlokCommonJavadocs, offlineJavadocPackageDir.getCanonicalPath() + "/interlok-common-$interlokCoreVersion-javadoc.jar")
-    options.linksOffline(interlokLicenseJavadocs, offlineJavadocPackageDir.getCanonicalPath() + "/interlok-licensing-$interlokCoreVersion-javadoc.jar")
 
     taglets = ["com.adaptris.taglet.ConfigTaglet", "com.adaptris.taglet.LicenseTaglet"]
     options.addStringOption "tagletpath", configurations.javadoc.asPath
@@ -238,7 +229,7 @@ task umlJavadoc(type: Javadoc) {
 
 
 jacoco {
-  toolVersion="0.8.1"
+  toolVersion="0.8.3"
 }
 
 jacocoTestReport {
@@ -258,10 +249,15 @@ task examplesJar(type: Jar, dependsOn: test) {
   from new File(buildDir, '/examples')
 }
 
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
 
 artifacts {
   archives javadocJar
   archives examplesJar
+  archives sourcesJar
 }
 
 publishing {
@@ -271,14 +267,16 @@ publishing {
 
       artifact javadocJar { classifier "javadoc" }
       artifact examplesJar { classifier "examples" }
+      artifact sourcesJar { classifier "sources" }
 
       pom.withXml {
         asNode().appendNode("name", componentName)
         asNode().appendNode("description", "PGP encryption/decryption services")
+        asNode().appendNode("url", "https://github.com/adaptris/interlok-pgp")
         def properties = asNode().appendNode("properties")
-        properties.appendNode("target", "3.8.0+")
-        properties.appendNode("tags", "solace,jms")
-        properties.appendNode("license", "true")
+        properties.appendNode("target", "3.9.2+")
+        properties.appendNode("tags", "pgp,security")
+        properties.appendNode("license", "false")
       }
     }
   }
