@@ -67,6 +67,18 @@ abstract class PGPService extends ServiceImp
 		/* unused */
 	}
 
+	/*
+	 * These following three methods came about because the BouncyCastle
+	 * GPG API likes to work on streams (ideal for encrypting/signing
+	 * files) but an Interlok user may select a data input/output
+	 * parameter that is a string - not a big deal as strings can easily
+	 * become streams, and if the cipher is armor encoded then using
+	 * strings is probably the easy thing to do, but that may not always
+	 * be the case. So here we do our best to get everything as a stream
+	 * (except the private key passphrase, which should always be a
+	 * string; if it's raw binary data then go soak your head).
+	 */
+
 	protected InputStream extractStream(AdaptrisMessage message, DataInputParameter parameter, String warning) throws Exception
 	{
 		Object param = parameter.extract(message);
