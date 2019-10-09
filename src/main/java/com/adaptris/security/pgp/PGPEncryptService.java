@@ -39,6 +39,22 @@ import java.util.Iterator;
  * encrypt. Optionally it will ASCII armor encode the cipher text
  * (default), and include extra integrity checks (default).
  *
+ * <pre>{@code
+ *    <pgp-encrypt>
+ *        <unique-id>mad-lalande</unique-id>
+ *        <public-key class="constant-data-input-parameter">
+ *            <value>-----BEGIN PGP PUBLIC KEY BLOCK-----
+ *
+ *    mQENBF2ckxABCAC5Kfu39ky3OIXkxwWOJx70G2dLRYvDMHXf3ZraUPNRMIhh3ZGx
+ *    -----END PGP PUBLIC KEY BLOCK-----</value>
+ *        </public-key>
+ *        <clear-text class="stream-payload-input-parameter"/>
+ *        <cipher-text class="stream-payload-output-parameter"/>
+ *        <armor-encoding>true</armor-encoding>
+ *        <integrity-check>true</integrity-check>
+ *    </pgp-encrypt>
+ * }</pre>
+ *
  * @author aanderson
  * @config pgp-encrypt
  */

@@ -36,6 +36,23 @@ import java.util.Iterator;
  * It requires a private key, the passphrase to unlock the key, and
  * an encrypted message.
  *
+ * <pre>{@code
+ *    <pgp-decrypt>
+ *        <unique-id>trusting-mayer</unique-id>
+ *        <private-key class="constant-data-input-parameter">
+ *            <value>-----BEGIN PGP PRIVATE KEY BLOCK-----
+ *
+ *    lQPGBF2ckxABCAC5Kfu39ky3OIXkxwWOJx70G2dLRYvDMHXf3ZraUPNRMIhh3ZGx
+ *    -----END PGP PRIVATE KEY BLOCK-----</value>
+ *        </private-key>
+ *        <passphrase class="constant-data-input-parameter">
+ *            <value>my5ecr3tP455w0rd</value>
+ *        </passphrase>
+ *        <cipher-text class="stream-payload-input-parameter"/>
+ *        <clear-text class="stream-payload-output-parameter"/>
+ *    </pgp-decrypt>
+ * }</pre>
+ *
  * @author aanderson
  * @config pgp-decrypt
  */

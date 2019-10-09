@@ -37,6 +37,23 @@ import java.io.InputStream;
  * will also optionally return the original/unsigned message
  * (especially useful if the signature was not detached).
  *
+ * <pre>{@code
+ *    <pgp-verify>
+ *        <unique-id>jovial-elion</unique-id>
+ *        <public-key class="constant-data-input-parameter">
+ *            <value>-----BEGIN PGP PUBLIC KEY BLOCK-----
+ *
+ *    mQENBF2ckxABCAC5Kfu39ky3OIXkxwWOJx70G2dLRYvDMHXf3ZraUPNRMIhh3ZGx
+ *    -----END PGP PUBLIC KEY BLOCK-----</value>
+ *        </public-key>
+ *        <signed-message class="stream-payload-input-parameter"/>
+ *        <signature class="metadata-stream-input-parameter">
+ *            <metadata-key>signature</metadata-key>
+ *        </signature>
+ *        <original-message class="string-payload-data-output-parameter"/>
+ *    </pgp-verify>
+ * }</pre>
+ *
  * @author aanderson
  * @config pgp-verify
  */

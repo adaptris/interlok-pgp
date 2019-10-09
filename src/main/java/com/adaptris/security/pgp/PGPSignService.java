@@ -47,6 +47,27 @@ import java.util.Iterator;
  * sign. Optionally it will ASCII armor encode the signature (default)
  * and create a detached signature (default).
  *
+ * <pre>{@code
+ *    <pgp-sign>
+ *        <unique-id>nostalgic-golick</unique-id>
+ *        <private-key class="constant-data-input-parameter">
+ *            <value>-----BEGIN PGP PRIVATE KEY BLOCK-----
+ *
+ *    lQPGBF2ckxABCAC5Kfu39ky3OIXkxwWOJx70G2dLRYvDMHXf3ZraUPNRMIhh3ZGx
+ *    -----END PGP PRIVATE KEY BLOCK-----</value>
+ *        </private-key>
+ *        <passphrase class="constant-data-input-parameter">
+ *            <value>my5ecr3tP455w0rd</value>
+ *        </passphrase>
+ *        <clearText class="stream-payload-input-parameter"/>
+ *        <armor-encoding>true</armor-encoding>
+ *        <detached-signature>true</detached-signature>
+ *        <signature class="metadata-stream-output-parameter">
+ *            <metadata-key>signature</metadata-key>
+ *        </signature>
+ *    </pgp-sign>
+ * }</pre>
+ *
  * @author aanderson
  * @config pgp-sign
  */
