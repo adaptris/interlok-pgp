@@ -48,8 +48,8 @@ import java.util.Iterator;
  *    mQENBF2ckxABCAC5Kfu39ky3OIXkxwWOJx70G2dLRYvDMHXf3ZraUPNRMIhh3ZGx
  *    -----END PGP PUBLIC KEY BLOCK-----</value>
  *        </public-key>
- *        <clear-text class="stream-payload-input-parameter"/>
- *        <cipher-text class="stream-payload-output-parameter"/>
+ *        <clear-text class="stream-payload-input-parameter"/>             <!-- clear text comes from message payload -->
+ *        <cipher-text class="stream-payload-output-parameter"/>           <!-- cipher text goes back into the message payload -->
  *        <armor-encoding>true</armor-encoding>
  *        <integrity-check>true</integrity-check>
  *    </pgp-encrypt>

@@ -48,8 +48,8 @@ import java.util.Iterator;
  *        <passphrase class="constant-data-input-parameter">
  *            <value>my5ecr3tP455w0rd</value>
  *        </passphrase>
- *        <cipher-text class="stream-payload-input-parameter"/>
- *        <clear-text class="stream-payload-output-parameter"/>
+ *        <cipher-text class="stream-payload-input-parameter"/>            <!-- cipher text comes from message payload -->
+ *        <clear-text class="stream-payload-output-parameter"/>            <!-- clear text goes back into the message payload -->
  *    </pgp-decrypt>
  * }</pre>
  *

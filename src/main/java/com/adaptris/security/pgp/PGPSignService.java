@@ -59,10 +59,10 @@ import java.util.Iterator;
  *        <passphrase class="constant-data-input-parameter">
  *            <value>my5ecr3tP455w0rd</value>
  *        </passphrase>
- *        <clearText class="stream-payload-input-parameter"/>
+ *        <clearText class="stream-payload-input-parameter"/>              <!-- clear text comes from message payload -->
  *        <armor-encoding>true</armor-encoding>
  *        <detached-signature>true</detached-signature>
- *        <signature class="metadata-stream-output-parameter">
+ *        <signature class="metadata-stream-output-parameter">             <!-- detached signature goes into message metadata -->
  *            <metadata-key>signature</metadata-key>
  *        </signature>
  *    </pgp-sign>

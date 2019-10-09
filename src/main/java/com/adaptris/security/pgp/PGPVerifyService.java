@@ -46,11 +46,11 @@ import java.io.InputStream;
  *    mQENBF2ckxABCAC5Kfu39ky3OIXkxwWOJx70G2dLRYvDMHXf3ZraUPNRMIhh3ZGx
  *    -----END PGP PUBLIC KEY BLOCK-----</value>
  *        </public-key>
- *        <signed-message class="stream-payload-input-parameter"/>
- *        <signature class="metadata-stream-input-parameter">
+ *        <signed-message class="stream-payload-input-parameter"/>         <!-- signed message (without signature, as it's detached) -->
+ *        <signature class="metadata-stream-input-parameter">              <!-- detached signature comes into message metadata -->
  *            <metadata-key>signature</metadata-key>
  *        </signature>
- *        <original-message class="string-payload-data-output-parameter"/>
+ *        <original-message class="string-payload-data-output-parameter"/> <!-- optional original message, without signature -->
  *    </pgp-verify>
  * }</pre>
  *
