@@ -34,8 +34,8 @@ import java.io.InputStream;
  * This service provides a way to verify GPG/PGP signed messages. It
  * requires the public key of whom signed the message, the signed
  * message, and (if the signature is detached) the signature. It will
- * return the original/unsigned message (especially useful if the
- * signature was not detached).
+ * will also optionally return the original/unsigned message
+ * (especially useful if the signature was not detached).
  *
  * @author aanderson
  * @config pgp-verify
