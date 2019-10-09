@@ -2,6 +2,7 @@ package com.adaptris.security.pgp;
 
 import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.ComponentProfile;
+import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
 import com.adaptris.core.common.MetadataStreamInputParameter;
@@ -41,6 +42,7 @@ import java.util.Iterator;
 @XStreamAlias("pgp-decrypt")
 @AdapterComponent
 @ComponentProfile(summary = "Decrypt data using a PGP/GPG private key", tag = "pgp,gpg,decrypt,private key")
+@DisplayOrder(order = { "privateKey", "passphrase", "clearText", "clearText" })
 public class PGPDecryptService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPDecryptService.class);

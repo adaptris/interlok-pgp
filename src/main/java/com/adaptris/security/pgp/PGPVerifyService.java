@@ -2,6 +2,7 @@ package com.adaptris.security.pgp;
 
 import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.ComponentProfile;
+import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
 import com.adaptris.core.common.MetadataStreamInputParameter;
@@ -42,6 +43,7 @@ import java.io.InputStream;
 @XStreamAlias("pgp-verify")
 @AdapterComponent
 @ComponentProfile(summary = "Verify sign data using a PGP/GPG public key", tag = "pgp,gpg,sign,signature,verify,public key")
+@DisplayOrder(order = { "publicKey", "signedMessage", "signature", "originalMessage" })
 public class PGPVerifyService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPVerifyService.class);

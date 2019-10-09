@@ -3,6 +3,7 @@ package com.adaptris.security.pgp;
 import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.AdvancedConfig;
 import com.adaptris.annotation.ComponentProfile;
+import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
@@ -44,6 +45,7 @@ import java.util.Iterator;
 @XStreamAlias("pgp-encrypt")
 @AdapterComponent
 @ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key")
+@DisplayOrder(order = { "publicKey", "clearText", "cipherText" })
 public class PGPEncryptService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPEncryptService.class);

@@ -3,6 +3,7 @@ package com.adaptris.security.pgp;
 import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.AdvancedConfig;
 import com.adaptris.annotation.ComponentProfile;
+import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
@@ -52,6 +53,7 @@ import java.util.Iterator;
 @XStreamAlias("pgp-sign")
 @AdapterComponent
 @ComponentProfile(summary = "Sign data using a PGP/GPG private key", tag = "pgp,gpg,sign,signature,private key")
+@DisplayOrder(order = { "privateKey", "passphrase", "clearText", "signature" })
 public class PGPSignService extends PGPService
 {
 	private static transient Logger log = LoggerFactory.getLogger(PGPSignService.class);
