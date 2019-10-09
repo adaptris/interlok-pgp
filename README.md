@@ -28,11 +28,9 @@ encrypt. Optionally it will ASCII armor encode the cipher text
 
 ## PGP Decrypt
 
-This service provides a way to verify GPG/PGP signed messages. It
-requires the public key of whom signed the message, the signed message,
-and (if the signature is detached) the signature. It will will also
-optionally return the original/unsigned message (especially useful if
-the signature was not detached).
+This service provides a way to decrypt GPG/PGP encrypted messages. It
+requires a private key, the passphrase to unlock the key, and an
+encrypted message.
 
 ````xml
     <pgp-decrypt>
@@ -81,9 +79,11 @@ a detached signature (default).
 
 ## PGP Verify
 
-This service provides a way to decrypt GPG/PGP encrypted messages.  It
-requires a private key, the passphrase to unlock the key, and an
-encrypted message.
+This service provides a way to verify GPG/PGP signed messages. It
+requires the public key of whom signed the message, the signed message,
+and (if the signature is detached) the signature. It will will also
+optionally return the original/unsigned message (especially useful if
+the signature was not detached).
 
 ````xml
     <pgp-verify>
