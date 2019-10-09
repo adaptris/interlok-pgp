@@ -1,6 +1,12 @@
 package com.adaptris.security.pgp;
 
+import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceImp;
+import com.adaptris.core.common.InputStreamWithEncoding;
+import com.adaptris.interlok.InterlokException;
+import com.adaptris.interlok.config.DataInputParameter;
+import com.adaptris.interlok.config.DataOutputParameter;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPSignature;
@@ -10,19 +16,24 @@ import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.DecoderException;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.security.SignatureException;
 
+/**
+ * Provide many common utility methods for BouncyCastle GPG.
+ */
 abstract class PGPService extends ServiceImp
 {
 	private static final int READ_AHEAD = 60;
 
-	protected static final Charset CHARSET = Charset.forName("UTF-8");
+	protected static final Charset CHARSET = StandardCharsets.UTF_8;
 
 	static
 	{
@@ -54,6 +65,49 @@ abstract class PGPService extends ServiceImp
 	public void prepare()
 	{
 		/* unused */
+	}
+
+	protected InputStream extractStream(AdaptrisMessage message, DataInputParameter parameter, String warning) throws Exception
+	{
+		Object param = parameter.extract(message);
+		if (param instanceof String)
+		{
+			param = new ByteArrayInputStream(((String)param).getBytes(CHARSET));
+		}
+		if (!(param instanceof InputStream))
+		{
+			throw new InterlokException(warning);
+		}
+		return (InputStream)param;
+	}
+
+	protected String extractString(AdaptrisMessage message, DataInputParameter parameter, String warning) throws Exception
+	{
+
+		Object param = parameter.extract(message);
+		if (param instanceof InputStream)
+		{
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			IOUtils.copy((InputStream)param, baos);
+			param = baos.toString(CHARSET.toString());
+		}
+		if (!(param instanceof String))
+		{
+			throw new InterlokException(warning);
+		}
+		return (String)param;
+	}
+
+	protected void insertStream(AdaptrisMessage message, DataOutputParameter parameter, ByteArrayOutputStream value) throws Exception
+	{
+		try
+		{
+			parameter.insert(value.toString(CHARSET.toString()), message);
+		}
+		catch (ClassCastException e)
+		{
+			parameter.insert(new InputStreamWithEncoding(new ByteArrayInputStream(value.toByteArray()), null), message);
+		}
 	}
 
 	/**
@@ -92,7 +146,7 @@ abstract class PGPService extends ServiceImp
 			byte[] buf = new byte[READ_AHEAD];
 			int count = 1;
 			int index = 1;
-			buf[0] = (byte) ch;
+			buf[0] = (byte)ch;
 			while (count != READ_AHEAD && (ch = in.read()) >= 0)
 			{
 				if (!isPossiblyBase64(ch))
@@ -102,7 +156,7 @@ abstract class PGPService extends ServiceImp
 				}
 				if (ch != '\n' && ch != '\r')
 				{
-					buf[index++] = (byte) ch;
+					buf[index++] = (byte)ch;
 				}
 				count++;
 			}
@@ -149,8 +203,9 @@ abstract class PGPService extends ServiceImp
 	{
 		BufferedInputStreamExt(InputStream input)
 		{
-			super (input);
+			super(input);
 		}
+
 		public synchronized int available() throws IOException
 		{
 			int result = super.available();
@@ -185,7 +240,7 @@ abstract class PGPService extends ServiceImp
 
 	protected static int getLengthWithoutWhiteSpace(byte[] line)
 	{
-		int    end = line.length - 1;
+		int end = line.length - 1;
 		while (end >= 0 && isWhiteSpace(line[end]))
 		{
 			end--;
@@ -195,7 +250,7 @@ abstract class PGPService extends ServiceImp
 
 	protected static int getLengthWithoutSeparatorOrTrailingWhitespace(byte[] line)
 	{
-		int    end = line.length - 1;
+		int end = line.length - 1;
 
 		while (end >= 0 && isWhiteSpace(line[end]))
 		{

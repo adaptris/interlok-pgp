@@ -4,11 +4,9 @@ import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
-import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -31,6 +29,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
+/**
+ * This service provides a way to verify GPG/PGP signed messages. It
+ * requires the public key of whom signed the message, the signed
+ * message, and (if the signature is detached) the signature. It will
+ * return the original/unsigned message (especially useful if the
+ * signature was not detached).
+ *
+ * @author aanderson
+ * @config pgp-verify
+ */
 @XStreamAlias("pgp-verify")
 @AdapterComponent
 @ComponentProfile(summary = "Verify sign data using a PGP/GPG public key", tag = "pgp,gpg,sign,signature,verify,public key")
@@ -50,7 +58,7 @@ public class PGPVerifyService extends PGPService
 	private DataInputParameter signature = new MetadataStreamInputParameter();
 
 	@Valid
-	private DataOutputParameter unsignedMessage = new PayloadStreamOutputParameter();
+	private DataOutputParameter originalMessage = new PayloadStreamOutputParameter();
 
 	/**
 	 * {@inheritDoc}.
@@ -60,58 +68,23 @@ public class PGPVerifyService extends PGPService
 	{
 		try
 		{
-			Object key = this.publicKey.extract(message);
-			if (key instanceof String)
-			{
-				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
-			}
-			if (!(key instanceof InputStream))
-			{
-				throw new InterlokException("Could not read public key");
-			}
-			Object data = this.signedMessage.extract(message);
-			if (data instanceof String)
-			{
-				data = new ByteArrayInputStream(((String)data).getBytes(CHARSET));
-			}
-			if (!(data instanceof InputStream))
-			{
-				throw new InterlokException("Could not read signed message");
-			}
-			Object signature = null; // if the signature is not set them it can't be a detached signature
-			if (this.signature != null)
-			{
-				signature = this.signature.extract(message);
-				if (signature instanceof String)
-				{
-					signature = new ByteArrayInputStream(((String)signature).getBytes(CHARSET));
-				}
-				if (!(signature instanceof InputStream))
-				{
-					throw new InterlokException("Could not read signature");
-				}
-			}
-
-			ByteArrayOutputStream unsignedMessage = new ByteArrayOutputStream();
-
+			InputStream key = extractStream(message, publicKey, "Could not read public key");
+			InputStream data = extractStream(message, signedMessage, "Could not read cipher text message to verify");
+			InputStream sig = null; // if the signature continues to be null then it can't be a detached signature
 			if (signature != null)
 			{
-				verifyDetached((InputStream)data, (InputStream)signature, (InputStream)key, unsignedMessage);
+				sig = extractStream(message, signature, "Could not read signature to verify");
+			}
+			ByteArrayOutputStream original = new ByteArrayOutputStream();
+			if (signature != null)
+			{
+				verify(data, sig, key, original);
 			}
 			else
 			{
-				verifyClear((InputStream)data, (InputStream)key, unsignedMessage);
+				verify(data, key, original);
 			}
-
-			try
-			{
-				this.unsignedMessage.insert(unsignedMessage.toString(CHARSET.toString()), message);
-			}
-			catch (ClassCastException e)
-			{
-				/* this.unsignedMessage was not expecting a String, must be an InputStreamWithEncoding */
-				this.unsignedMessage.insert(new InputStreamWithEncoding(new ByteArrayInputStream(unsignedMessage.toByteArray()), null), message);
-			}
+			insertStream(message, originalMessage, original);
 		}
 		catch (Exception e)
 		{
@@ -185,9 +158,9 @@ public class PGPVerifyService extends PGPService
 	 *
 	 * @param message The message.
 	 */
-	public void setUnsignedMessage(DataOutputParameter message)
+	public void setOriginalMessage(DataOutputParameter message)
 	{
-		this.unsignedMessage = message;
+		this.originalMessage = message;
 	}
 
 	/**
@@ -195,12 +168,20 @@ public class PGPVerifyService extends PGPService
 	 *
 	 * @return The message.
 	 */
-	public DataOutputParameter getUnsignedMessage()
+	public DataOutputParameter getOriginalMessage()
 	{
-		return unsignedMessage;
+		return originalMessage;
 	}
 
-	private static void verifyClear(InputStream in, InputStream key, ByteArrayOutputStream out) throws Exception
+	/**
+	 * Verify a clear inline signature.
+	 *
+	 * @param in  The signed message.
+	 * @param key The public key.
+	 * @param out The original, unsigned message.
+	 * @throws Exception Thrown if there's a problem verifying the signature.
+	 */
+	private static void verify(InputStream in, InputStream key, ByteArrayOutputStream out) throws Exception
 	{
 		ArmoredInputStream aIn = new ArmoredInputStream(in);
 		//
@@ -265,7 +246,16 @@ public class PGPVerifyService extends PGPService
 		}
 	}
 
-	private static void verifyDetached(InputStream inMessage, InputStream inSignature, InputStream key, ByteArrayOutputStream out) throws Exception
+	/**
+	 * Verify a detached signature for a given message.
+	 *
+	 * @param inMessage   The original message.
+	 * @param inSignature The detached signature.
+	 * @param key         The public key.
+	 * @param out         The original message.
+	 * @throws Exception Thrown if there's a problem verifying the signature.
+	 */
+	private static void verify(InputStream inMessage, InputStream inSignature, InputStream key, ByteArrayOutputStream out) throws Exception
 	{
 		inSignature = getDecoderStream(inSignature);
 		JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(inSignature);

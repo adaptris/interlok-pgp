@@ -6,11 +6,9 @@ import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
-import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -26,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +32,15 @@ import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Iterator;
 
+/**
+ * This service provides a way to encrypt messages with GPG/PGP. It
+ * requires a public key or the intended recipient, and a message to
+ * encrypt. Optionally it will ASCII armor encode the cipher text
+ * (default), and include extra integrity checks (default).
+ *
+ * @author aanderson
+ * @config pgp-encrypt
+ */
 @XStreamAlias("pgp-encrypt")
 @AdapterComponent
 @ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key")
@@ -72,38 +78,11 @@ public class PGPEncryptService extends PGPService
 	{
 		try
 		{
-			Object key = this.publicKey.extract(message);
-			if (key instanceof String)
-			{
-				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
-			}
-			if (!(key instanceof InputStream))
-			{
-				throw new InterlokException("Could not read public key");
-			}
-			Object clearText = this.clearText.extract(message);
-			if (clearText instanceof String)
-			{
-				clearText = new ByteArrayInputStream(((String)clearText).getBytes(CHARSET));
-			}
-			if (!(clearText instanceof InputStream))
-			{
-				throw new InterlokException("Could not read clear text data");
-			}
-
-			ByteArrayOutputStream cipherText = new ByteArrayOutputStream();
-
-			encrypt((InputStream)clearText, cipherText, (InputStream)key, armorEncoding, integrityCheck);
-
-			try
-			{
-				this.cipherText.insert(cipherText.toString(CHARSET.toString()), message);
-			}
-			catch (ClassCastException e)
-			{
-				/* this.cipherText was not expecting a String, must be an InputStreamWithEncoding */
-				this.cipherText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(cipherText.toByteArray()), null), message);
-			}
+			InputStream key = extractStream(message, publicKey, "Could not read public key");
+			InputStream clear = extractStream(message, clearText, "Could not read clear text message to encrypt");
+			ByteArrayOutputStream cipher = new ByteArrayOutputStream();
+			encrypt(clear, cipher, key, armorEncoding, integrityCheck);
+			insertStream(message, cipherText, cipher);
 		}
 		catch (Exception e)
 		{
@@ -212,6 +191,17 @@ public class PGPEncryptService extends PGPService
 		return integrityCheck;
 	}
 
+	/**
+	 * Encrypt data using a GPG public key.
+	 *
+	 * @param in                 The data to encrypt.
+	 * @param out                The encrypted data.
+	 * @param encKey             The public key.
+	 * @param armor              Whether to armor encode.
+	 * @param withIntegrityCheck Whether to include integrity check.
+	 * @throws PGPException Thrown if there's a problem with the key/passphrase.
+	 * @throws IOException  Thrown if there's an IO issue.
+	 */
 	private static void encrypt(InputStream in, OutputStream out, InputStream encKey, boolean armor, boolean withIntegrityCheck) throws PGPException, IOException
 	{
 		if (armor)
@@ -292,7 +282,7 @@ public class PGPEncryptService extends PGPService
 		}
 		finally
 		{
-			Arrays.fill(buf, (byte) 0);
+			Arrays.fill(buf, (byte)0);
 			try
 			{
 				in.close();

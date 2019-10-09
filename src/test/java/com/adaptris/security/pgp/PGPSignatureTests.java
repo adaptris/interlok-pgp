@@ -71,7 +71,7 @@ public class PGPSignatureTests extends PGPTests
 		try
 		{
 			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
-			PGPSignService service = getSignService(privateKey, PASSPHRASE,true, true);
+			PGPSignService service = getSignService(privateKey, PASSPHRASE, true, true);
 			service.setPrivateKey(new ConstantDataInputParameter());
 			service.doService(message);
 			fail();
@@ -107,7 +107,7 @@ public class PGPSignatureTests extends PGPTests
 			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(PASSPHRASE);
 			PGPSignService service = getSignService(privateKey, PASSPHRASE, true, true);
 			service.setPassphrase(new PayloadStreamInputParameter());
-			service.setDataToSign(new ConstantDataInputParameter());
+			service.setClearText(new ConstantDataInputParameter());
 			service.doService(message);
 			fail();
 		}
@@ -240,7 +240,7 @@ public class PGPSignatureTests extends PGPTests
 		PGPSignService service = new PGPSignService();
 		service.setPrivateKey(new ConstantDataInputParameter(getKey(key)));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
-		service.setDataToSign(detached ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
+		service.setClearText(detached ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setDetachedSignature(detached);
 		service.setArmorEncoding(armor);
 		service.setSignature(detached ? new PayloadStreamOutputParameter() : new StringPayloadDataOutputParameter());
@@ -253,7 +253,7 @@ public class PGPSignatureTests extends PGPTests
 		service.setPublicKey(new ConstantDataInputParameter(getKey(key)));
 		service.setSignedMessage(detached ? new MetadataDataInputParameter("message") : new PayloadStreamInputParameter());
 		service.setSignature(detached ? new PayloadStreamInputParameter() : null);
-		service.setUnsignedMessage(detached ? new StringPayloadDataOutputParameter() : new PayloadStreamOutputParameter());
+		service.setOriginalMessage(detached ? new StringPayloadDataOutputParameter() : new PayloadStreamOutputParameter());
 		return service;
 	}
 

@@ -4,15 +4,12 @@ import com.adaptris.annotation.AdapterComponent;
 import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
-import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.apache.commons.io.IOUtils;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -26,7 +23,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +30,14 @@ import java.io.OutputStream;
 import java.security.NoSuchProviderException;
 import java.util.Iterator;
 
+/**
+ * This service provides a way to decrypt GPG/PGP encrypted messages.
+ * It requires a private key, the passphrase to unlock the key, and
+ * an encrypted message.
+ *
+ * @author aanderson
+ * @config pgp-decrypt
+ */
 @XStreamAlias("pgp-decrypt")
 @AdapterComponent
 @ComponentProfile(summary = "Decrypt data using a PGP/GPG private key", tag = "pgp,gpg,decrypt,private key")
@@ -65,49 +69,12 @@ public class PGPDecryptService extends PGPService
 	{
 		try
 		{
-			Object key = this.privateKey.extract(message);
-			if (key instanceof String)
-			{
-				key = new ByteArrayInputStream(((String)key).getBytes(CHARSET));
-			}
-			if (!(key instanceof InputStream))
-			{
-				throw new InterlokException("Could not read public key");
-			}
-			Object passphrase = this.passphrase.extract(message);
-			if (passphrase instanceof InputStream)
-			{
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				IOUtils.copy((InputStream)passphrase, baos);
-				passphrase = baos.toString(CHARSET.toString());
-			}
-			if (!(passphrase instanceof String))
-			{
-				throw new InterlokException("Could not read public key");
-			}
-			Object cipherText = this.cipherText.extract(message);
-			if (cipherText instanceof String)
-			{
-				cipherText = new ByteArrayInputStream(((String)cipherText).getBytes(CHARSET));
-			}
-			if (!(cipherText instanceof InputStream))
-			{
-				throw new InterlokException("Could not read cipher text data");
-			}
-
-			ByteArrayOutputStream clearText = new ByteArrayOutputStream();
-
-			decrypt((InputStream)cipherText, (InputStream)key, ((String)passphrase).toCharArray(), clearText);
-
-			try
-			{
-				this.clearText.insert(clearText.toString(CHARSET.toString()), message);
-			}
-			catch (ClassCastException e)
-			{
-				/* this.clearText was not expecting a String, must be an InputStreamWithEncoding */
-				this.clearText.insert(new InputStreamWithEncoding(new ByteArrayInputStream(clearText.toByteArray()), null), message);
-			}
+			InputStream key = extractStream(message, privateKey, "Could not read private key");
+			String password = extractString(message, passphrase, "Could not read passphrase");
+			InputStream cipher = extractStream(message, cipherText, "Could not read cipher text message to decrypt");
+			ByteArrayOutputStream clear = new ByteArrayOutputStream();
+			decrypt(cipher, key, password.toCharArray(), clear);
+			insertStream(message, clearText, clear);
 		}
 		catch (Exception e)
 		{
@@ -196,7 +163,17 @@ public class PGPDecryptService extends PGPService
 		return clearText;
 	}
 
-	private static void decrypt(InputStream in, InputStream key, char[] passwd, OutputStream out) throws PGPException, IOException, NoSuchProviderException
+	/**
+	 * Decrypt a GPG encrypted message.
+	 *
+	 * @param in     The encrypted data.
+	 * @param key    The private key.
+	 * @param passwd The passphrase to unlock the key.
+	 * @param out    The decrypted data.
+	 * @throws PGPException Thrown if there's a problem with the key/passphrase.
+	 * @throws IOException  Thrown if there's an IO issue.
+	 */
+	private static void decrypt(InputStream in, InputStream key, char[] passwd, OutputStream out) throws PGPException, IOException
 	{
 		in = getDecoderStream(in);
 		JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
@@ -273,13 +250,13 @@ public class PGPDecryptService extends PGPService
 	 * exists.
 	 *
 	 * @param pgpSec a secret key ring collection.
-	 * @param keyID keyID we want.
-	 * @param pass passphrase to decrypt secret key with.
+	 * @param keyID  keyID we want.
+	 * @param pass   passphrase to decrypt secret key with.
 	 * @return the private key.
 	 * @throws PGPException
 	 * @throws NoSuchProviderException
 	 */
-	private static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass) throws PGPException, NoSuchProviderException
+	private static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass) throws PGPException
 	{
 		PGPSecretKey pgpSecKey = pgpSec.getSecretKey(keyID);
 		if (pgpSecKey == null)
