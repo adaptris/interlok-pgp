@@ -10,6 +10,8 @@ import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
+import com.adaptris.interlok.resolver.ExternalResolver;
+import com.adaptris.security.password.Password;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
@@ -89,7 +91,7 @@ public class PGPDecryptService extends PGPService
 		try
 		{
 			InputStream key = extractStream(message, privateKey, "Could not read private key");
-			String password = extractString(message, passphrase, "Could not read passphrase");
+			String password = Password.decode(ExternalResolver.resolve(extractString(message, passphrase, "Could not read passphrase")));
 			InputStream cipher = extractStream(message, cipherText, "Could not read cipher text message to decrypt");
 			ByteArrayOutputStream clear = new ByteArrayOutputStream();
 			decrypt(cipher, key, password.toCharArray(), clear);

@@ -12,6 +12,8 @@ import com.adaptris.core.common.MetadataStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
+import com.adaptris.interlok.resolver.ExternalResolver;
+import com.adaptris.security.password.Password;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.lang.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -117,7 +119,7 @@ public class PGPSignService extends PGPService
 		try
 		{
 			InputStream key = extractStream(message, privateKey, "Could not read private key");
-			String password = extractString(message, passphrase, "Could not read passphrase");
+			String password = Password.decode(ExternalResolver.resolve(extractString(message, passphrase, "Could not read passphrase")));
 			InputStream data = extractStream(message, clearText, "Could not read clear text message to sign");
 			ByteArrayOutputStream sig = new ByteArrayOutputStream();
 			if (detachedSignature)
