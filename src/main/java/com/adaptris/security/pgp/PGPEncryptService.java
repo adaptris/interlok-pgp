@@ -60,7 +60,7 @@ import java.util.Iterator;
  */
 @XStreamAlias("pgp-encrypt")
 @AdapterComponent
-@ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key")
+@ComponentProfile(summary = "Encrypt data using a PGP/GPG public key", tag = "pgp,gpg,encrypt,public key", since="3.9.2")
 @DisplayOrder(order = { "publicKey", "clearText", "cipherText" })
 public class PGPEncryptService extends PGPService
 {
