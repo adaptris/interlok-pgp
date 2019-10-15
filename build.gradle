@@ -29,6 +29,8 @@ ext {
   organizationUrl = "http://interlok.adaptris.net"
   slf4jVersion = '1.7.28'
   log4j2Version = '2.12.1'
+  bouncyCastleVersion='1.64'
+
 }
 
 if (JavaVersion.current().isJava8Compatible()) {
@@ -101,8 +103,8 @@ configurations.all {
 dependencies {
   compile ("com.adaptris:interlok-core:$interlokCoreVersion") { changing= true}
   compile ("com.adaptris:interlok-common:$interlokCoreVersion") { changing= true}
-  compile ("org.bouncycastle:bcprov-jdk15on:1.63")
-  compile ("org.bouncycastle:bcpg-jdk15on:1.63")
+  compile ("org.bouncycastle:bcprov-jdk15on:$bouncyCastleVersion")
+  compile ("org.bouncycastle:bcpg-jdk15on:$bouncyCastleVersion")
   compile ("org.slf4j:slf4j-api:$slf4jVersion")
 
   annotationProcessor ("com.adaptris:interlok-core-apt:$interlokCoreVersion") {changing= true}
