@@ -273,7 +273,7 @@ publishing {
 
       pom.withXml {
         asNode().appendNode("name", componentName)
-        asNode().appendNode("description", "PGP encryption/decryption services")
+        asNode().appendNode("description", "A collection of services that provide PGP encryption, decryption, signing, and verification.")
         asNode().appendNode("url", "https://github.com/adaptris/interlok-pgp")
         def properties = asNode().appendNode("properties")
         properties.appendNode("target", "3.9.2+")

@@ -60,7 +60,7 @@ import java.util.Iterator;
  */
 @XStreamAlias("pgp-decrypt")
 @AdapterComponent
-@ComponentProfile(summary = "Decrypt data using a PGP/GPG private key", tag = "pgp,gpg,decrypt,private key")
+@ComponentProfile(summary = "Decrypt data using a PGP/GPG private key", tag = "pgp,gpg,decrypt,private key", since="3.9.2")
 @DisplayOrder(order = { "privateKey", "passphrase", "clearText", "clearText" })
 public class PGPDecryptService extends PGPService
 {
@@ -230,24 +230,26 @@ public class PGPDecryptService extends PGPService
 		InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(sKey));
 		JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
 		PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
-		InputStream compressedStream = new BufferedInputStream(cData.getDataStream());
-		JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(compressedStream);
-		Object message = pgpFact.nextObject();
-		if (message instanceof PGPLiteralData)
+		try (InputStream compressedStream = new BufferedInputStream(cData.getDataStream()))
 		{
-			PGPLiteralData ld = (PGPLiteralData)message;
-			InputStream unc = ld.getInputStream();
-			OutputStream fOut = new BufferedOutputStream(out);
-			Streams.pipeAll(unc, fOut);
-			fOut.close();
-		}
-		else if (message instanceof PGPOnePassSignatureList)
-		{
-			throw new PGPException("Encrypted message contains a signed message - not literal data");
-		}
-		else
-		{
-			throw new PGPException("Message is not a simple encrypted file - type unknown");
+			JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(compressedStream);
+			Object message = pgpFact.nextObject();
+			if (message instanceof PGPLiteralData)
+			{
+				PGPLiteralData ld = (PGPLiteralData)message;
+				InputStream unc = ld.getInputStream();
+				OutputStream fOut = new BufferedOutputStream(out);
+				Streams.pipeAll(unc, fOut);
+				fOut.close();
+			}
+			else if (message instanceof PGPOnePassSignatureList)
+			{
+				throw new PGPException("Encrypted message contains a signed message - not literal data");
+			}
+			else
+			{
+				throw new PGPException("Message is not a simple encrypted file - type unknown");
+			}
 		}
 		if (pbe.isIntegrityProtected())
 		{

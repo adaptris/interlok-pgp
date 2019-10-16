@@ -59,7 +59,7 @@ import java.io.InputStream;
  */
 @XStreamAlias("pgp-verify")
 @AdapterComponent
-@ComponentProfile(summary = "Verify sign data using a PGP/GPG public key", tag = "pgp,gpg,sign,signature,verify,public key")
+@ComponentProfile(summary = "Verify sign data using a PGP/GPG public key", tag = "pgp,gpg,sign,signature,verify,public key", since="3.9.2")
 @DisplayOrder(order = { "publicKey", "signedMessage", "signature", "originalMessage" })
 public class PGPVerifyService extends PGPService
 {
