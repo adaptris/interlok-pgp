@@ -75,7 +75,7 @@ import java.util.Iterator;
  */
 @XStreamAlias("pgp-sign")
 @AdapterComponent
-@ComponentProfile(summary = "Sign data using a PGP/GPG private key", tag = "pgp,gpg,sign,signature,private key")
+@ComponentProfile(summary = "Sign data using a PGP/GPG private key", tag = "pgp,gpg,sign,signature,private key", since="3.9.2")
 @DisplayOrder(order = { "privateKey", "passphrase", "clearText", "signature" })
 public class PGPSignService extends PGPService
 {
