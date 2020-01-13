@@ -8,6 +8,7 @@ import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.core.common.StringPayloadDataInputParameter;
 import com.adaptris.core.common.StringPayloadDataOutputParameter;
+import static org.junit.Assert.fail;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.junit.Assert;
@@ -262,4 +263,10 @@ public class PGPSignatureTests extends PGPTests
 	{
 		return new PGPSignService();
 	}
+
+    @Override
+    public boolean isAnnotatedForJunit4() 
+    {
+        return true;
+    }
 }

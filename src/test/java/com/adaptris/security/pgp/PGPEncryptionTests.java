@@ -12,7 +12,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.junit.Assert;
 import org.junit.Test;
-
+import static org.junit.Assert.fail;
 import java.io.ByteArrayOutputStream;
 
 public class PGPEncryptionTests extends PGPTests
@@ -227,4 +227,10 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		return new PGPEncryptService();
 	}
+
+    @Override
+    public boolean isAnnotatedForJunit4() 
+    {
+        return true;
+    }
 }
