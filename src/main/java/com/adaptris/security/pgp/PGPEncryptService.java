@@ -15,7 +15,16 @@ import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.lang3.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
@@ -88,6 +97,8 @@ public class PGPEncryptService extends PGPService
 	@InputFieldDefault(value = "true")
 	private Boolean integrityCheck = true;
 
+	private String id;
+
 	/**
 	 * {@inheritDoc}.
 	 */
@@ -99,6 +110,7 @@ public class PGPEncryptService extends PGPService
 			InputStream key = extractStream(message, publicKey, "Could not read public key");
 			InputStream clear = extractStream(message, clearText, "Could not read clear text message to encrypt");
 			ByteArrayOutputStream cipher = new ByteArrayOutputStream();
+			id = message.getUniqueId();
 			encrypt(clear, cipher, key, armorEncoding, integrityCheck);
 			insertStream(message, cipherText, cipher);
 		}
@@ -220,17 +232,17 @@ public class PGPEncryptService extends PGPService
 	 * @throws PGPException Thrown if there's a problem with the key/passphrase.
 	 * @throws IOException  Thrown if there's an IO issue.
 	 */
-	private static void encrypt(InputStream in, OutputStream out, InputStream encKey, boolean armor, boolean withIntegrityCheck) throws PGPException, IOException
+	private void encrypt(InputStream in, OutputStream out, InputStream encKey, boolean armor, boolean withIntegrityCheck) throws PGPException, IOException
 	{
 		if (armor)
 		{
 			out = new ArmoredOutputStream(out);
 		}
 		/* TODO cipher could be an advanced option */
-		PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.AES_256).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
-		cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider("BC"));
+		PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.AES_256).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(PROVIDER));
+		cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider(PROVIDER));
 		OutputStream cOut = cPk.open(out, new byte[1 << 16]);
-		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.UNCOMPRESSED);
 		writeFileToLiteralData(in, comData.open(cOut), PGPLiteralData.BINARY, new byte[1 << 16]);
 		comData.close();
 		cOut.close();
@@ -284,31 +296,21 @@ public class PGPEncryptService extends PGPService
 	 * @throws IOException if an error occurs reading the file or writing to the output stream.
 	 * @see PGPLiteralDataGenerator#open(OutputStream, char, String, Date, byte[])
 	 */
-	private static void writeFileToLiteralData(InputStream in, OutputStream out, char fileType, byte[] buffer) throws IOException
+	private void writeFileToLiteralData(InputStream in, OutputStream out, char fileType, byte[] buffer) throws IOException
 	{
 		PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
-		OutputStream pOut = lData.open(out, fileType, in.toString(), new Date(), buffer);
 		byte[] buf = new byte[buffer.length];
-		try
+		try (OutputStream pOut = lData.open(out, fileType, id, new Date(), buffer))
 		{
 			int len;
 			while ((len = in.read(buf)) > 0)
 			{
 				pOut.write(buf, 0, len);
 			}
-			pOut.close();
 		}
 		finally
 		{
 			Arrays.fill(buf, (byte)0);
-			try
-			{
-				in.close();
-			}
-			catch (IOException ignored)
-			{
-				// ignore...
-			}
 		}
 	}
 }
