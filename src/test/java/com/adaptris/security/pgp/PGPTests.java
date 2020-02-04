@@ -27,7 +27,6 @@ import java.util.Date;
 abstract class PGPTests extends ServiceCase
 {
 	protected static final String MESSAGE = "Spicy jalapeno bacon ipsum dolor amet shankle hamburger tri-tip, filet mignon ham sirloin prosciutto pig andouille pork belly pork loin. Tail beef kielbasa alcatra salami doner turkey corned beef fatback leberkas pastrami shoulder spare ribs filet mignon pork loin. Cupim doner pastrami chicken venison pork loin. Ribeye pork tri-tip cow buffalo rump boudin sirloin short ribs picanha salami." + System.getProperty("line.separator");
-	protected static final String ENCODING = "UTF-8";
 	protected static final String ID = "email@example.com";
 	protected static final String PASSPHRASE = "passphrase";
 
@@ -108,7 +107,7 @@ abstract class PGPTests extends ServiceCase
 	 */
 	protected AdaptrisMessage newMessage(boolean passphrase) throws Exception
 	{
-		return AdaptrisMessageFactory.getDefaultInstance().newMessage(passphrase ? PASSPHRASE : MESSAGE, ENCODING);
+		return AdaptrisMessageFactory.getDefaultInstance().newMessage(passphrase ? PASSPHRASE : MESSAGE);
 	}
 
 	/**
@@ -142,7 +141,7 @@ abstract class PGPTests extends ServiceCase
 		ArmoredOutputStream armored = new ArmoredOutputStream(keyBytes);
 		key.encode(armored);
 		armored.close();
-		return keyBytes.toString(ENCODING);
+		return keyBytes.toString();
 	}
 
 	/**
@@ -160,6 +159,6 @@ abstract class PGPTests extends ServiceCase
 		ArmoredOutputStream armored = new ArmoredOutputStream(keyBytes);
 		key.encode(armored);
 		armored.close();
-		return keyBytes.toString(ENCODING);
+		return keyBytes.toString();
 	}
 }

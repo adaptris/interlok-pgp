@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.security.Security;
 import java.security.SignatureException;
 
@@ -351,6 +352,10 @@ abstract class PGPService extends ServiceImp
 		if (encoding == null)
 		{
 			encoding = message.getFactory().getDefaultCharEncoding();
+		}
+		if (encoding == null)
+		{
+			encoding = Charset.defaultCharset().toString();
 		}
 		return encoding;
 	}

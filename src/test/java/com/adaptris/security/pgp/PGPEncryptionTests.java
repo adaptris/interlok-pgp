@@ -200,10 +200,9 @@ public class PGPEncryptionTests extends PGPTests
 		armoredKey.close();
 
 		PGPEncryptService service = new PGPEncryptService();
-		service.setPublicKey(new ConstantDataInputParameter(keyBytes.toString(ENCODING)));
+		service.setPublicKey(new ConstantDataInputParameter(keyBytes.toString()));
 		service.setClearText(new StringPayloadDataInputParameter());
 		PayloadStreamOutputParameter streamOutput = new PayloadStreamOutputParameter();
-		streamOutput.setContentEncoding(ENCODING);
 		service.setCipherText(armor ? new StringPayloadDataOutputParameter() : streamOutput);
 		service.setArmorEncoding(armor);
 		service.setIntegrityCheck(integrity);
@@ -218,7 +217,7 @@ public class PGPEncryptionTests extends PGPTests
 		armoredKey.close();
 
 		PGPDecryptService service = new PGPDecryptService();
-		service.setPrivateKey(new ConstantDataInputParameter(keyBytes.toString(ENCODING)));
+		service.setPrivateKey(new ConstantDataInputParameter(keyBytes.toString()));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
 		service.setCipherText(armor ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setClearText(new StringPayloadDataOutputParameter());
