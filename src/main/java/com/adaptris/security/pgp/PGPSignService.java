@@ -275,8 +275,8 @@ public class PGPSignService extends PGPService
 	private static void sign(InputStream in, InputStream key, char[] passwd, int digest, OutputStream out) throws PGPException, IOException, SignatureException
 	{
 		PGPSecretKey pgpSec = readSecretKey(key);
-		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
-		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
+		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(PROVIDER).build(passwd));
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider(PROVIDER));
 		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
 		sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, pgpPrivKey);
 		Iterator it = pgpSec.getPublicKey().getUserIDs();
@@ -331,8 +331,8 @@ public class PGPSignService extends PGPService
 			out = new ArmoredOutputStream(out);
 		}
 		PGPSecretKey pgpSec = readSecretKey(key);
-		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
-		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
+		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(PROVIDER).build(passwd));
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider(PROVIDER));
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 		BCPGOutputStream bOut = new BCPGOutputStream(out);
 		int ch;

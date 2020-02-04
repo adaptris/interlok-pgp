@@ -240,7 +240,7 @@ public class PGPVerifyService extends PGPService
 		PGPSignatureList p3 = (PGPSignatureList)pgpFact.nextObject();
 		PGPSignature sig = p3.get(0);
 		PGPPublicKey publicKey = pgpRings.getPublicKey(sig.getKeyID());
-		sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
+		sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider(PROVIDER), publicKey);
 		//
 		// read the input, making sure we ignore the last newline.
 		//
@@ -293,7 +293,7 @@ public class PGPVerifyService extends PGPService
 		PGPPublicKeyRingCollection pgpPubRingCollection = new PGPPublicKeyRingCollection(getDecoderStream(key), new JcaKeyFingerprintCalculator());
 		PGPSignature sig = p3.get(0);
 		PGPPublicKey pubKey = pgpPubRingCollection.getPublicKey(sig.getKeyID());
-		sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
+		sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider(PROVIDER), pubKey);
 		int ch;
 		while ((ch = inMessage.read()) >= 0)
 		{
