@@ -1,7 +1,6 @@
 package com.adaptris.security.pgp;
 
 import com.adaptris.core.AdaptrisMessage;
-import com.adaptris.core.AdaptrisMessageFactory;
 import com.adaptris.core.common.ConstantDataInputParameter;
 import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
@@ -12,7 +11,9 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.junit.Assert;
 import org.junit.Test;
+
 import static org.junit.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 
 public class PGPEncryptionTests extends PGPTests
@@ -20,12 +21,12 @@ public class PGPEncryptionTests extends PGPTests
 	@Test
 	public void testEntireWorkflow() throws Exception
 	{
-		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+		AdaptrisMessage message = newMessage();
 		PGPEncryptService encrypt = getEncryptService(publicKey, true, true);
 
 		encrypt.doService(message);
 
-		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+		message = newMessage(message);
 		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, true);
 
 		decrypt.doService(message);
@@ -36,12 +37,12 @@ public class PGPEncryptionTests extends PGPTests
 	@Test
 	public void testWorkflowNonArmored() throws Exception
 	{
-		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+		AdaptrisMessage message = newMessage();
 		PGPEncryptService encrypt = getEncryptService(publicKey, false, true);
 
 		encrypt.doService(message);
 
-		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+		message = newMessage(message);
 		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
 
 		decrypt.doService(message);
@@ -52,12 +53,12 @@ public class PGPEncryptionTests extends PGPTests
 	@Test
 	public void testWorkflowNoIntegrity() throws Exception
 	{
-		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+		AdaptrisMessage message = newMessage();
 		PGPEncryptService encrypt = getEncryptService(publicKey, true, false);
 
 		encrypt.doService(message);
 
-		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+		message = newMessage(message);
 		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, true);
 
 		decrypt.doService(message);
@@ -68,12 +69,12 @@ public class PGPEncryptionTests extends PGPTests
 	@Test
 	public void testWorkflowNoArmorOrIntegrity() throws Exception
 	{
-		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+		AdaptrisMessage message = newMessage();
 		PGPEncryptService encrypt = getEncryptService(publicKey, false, false);
 
 		encrypt.doService(message);
 
-		message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+		message = newMessage(message);
 		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
 
 		decrypt.doService(message);
@@ -86,7 +87,7 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			AdaptrisMessage message = newMessage();
 			PGPEncryptService service = getEncryptService(publicKey, false, false);
 			service.setPublicKey(new ConstantDataInputParameter());
 			service.doService(message);
@@ -103,7 +104,7 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			AdaptrisMessage message = newMessage();
 			PGPEncryptService service = getEncryptService(publicKey, false, false);
 			service.setClearText(new ConstantDataInputParameter());
 			service.doService(message);
@@ -120,7 +121,7 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			AdaptrisMessage message = newMessage();
 			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
 			service.setPrivateKey(new ConstantDataInputParameter());
 			service.doService(message);
@@ -137,12 +138,12 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			AdaptrisMessage message = newMessage();
 			PGPEncryptService encrypt = getEncryptService(publicKey, true, true);
 
 			encrypt.doService(message);
 
-			message = AdaptrisMessageFactory.getDefaultInstance().newMessage(message.getPayload());
+			message = newMessage(message);
 			/* recall setUp to get a new/wrong private key */
 			setUp();
 			PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
@@ -161,7 +162,7 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(MESSAGE);
+			AdaptrisMessage message = newMessage();
 			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
 			service.setPassphrase(new ConstantDataInputParameter());
 			service.doService(message);
@@ -178,7 +179,7 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(PASSPHRASE);
+			AdaptrisMessage message = newMessage(true);
 			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
 			service.setPassphrase(new PayloadStreamInputParameter());
 			service.setCipherText(new ConstantDataInputParameter());
@@ -199,9 +200,11 @@ public class PGPEncryptionTests extends PGPTests
 		armoredKey.close();
 
 		PGPEncryptService service = new PGPEncryptService();
-		service.setPublicKey(new ConstantDataInputParameter(keyBytes.toString()));
+		service.setPublicKey(new ConstantDataInputParameter(keyBytes.toString(ENCODING)));
 		service.setClearText(new StringPayloadDataInputParameter());
-		service.setCipherText(armor ? new StringPayloadDataOutputParameter() : new PayloadStreamOutputParameter());
+		PayloadStreamOutputParameter streamOutput = new PayloadStreamOutputParameter();
+		streamOutput.setContentEncoding(ENCODING);
+		service.setCipherText(armor ? new StringPayloadDataOutputParameter() : streamOutput);
 		service.setArmorEncoding(armor);
 		service.setIntegrityCheck(integrity);
 		return service;
@@ -215,7 +218,7 @@ public class PGPEncryptionTests extends PGPTests
 		armoredKey.close();
 
 		PGPDecryptService service = new PGPDecryptService();
-		service.setPrivateKey(new ConstantDataInputParameter(keyBytes.toString()));
+		service.setPrivateKey(new ConstantDataInputParameter(keyBytes.toString(ENCODING)));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
 		service.setCipherText(armor ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
 		service.setClearText(new StringPayloadDataOutputParameter());
@@ -229,7 +232,7 @@ public class PGPEncryptionTests extends PGPTests
 	}
 
     @Override
-    public boolean isAnnotatedForJunit4() 
+    public boolean isAnnotatedForJunit4()
     {
         return true;
     }
