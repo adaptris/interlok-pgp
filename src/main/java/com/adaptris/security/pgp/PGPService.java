@@ -86,6 +86,10 @@ abstract class PGPService extends ServiceImp
 		{
 			param = new ByteArrayInputStream(((String)param).getBytes(getEncoding(message)));
 		}
+		if (param instanceof byte[])
+		{
+			param = new ByteArrayInputStream((byte[])param);
+		}
 		if (!(param instanceof InputStream))
 		{
 			throw new InterlokException(warning);
@@ -101,6 +105,12 @@ abstract class PGPService extends ServiceImp
 		{
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			IOUtils.copy((InputStream)param, baos);
+			param = baos.toString(getEncoding(message));
+		}
+		if (param instanceof byte[])
+		{
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			baos.write((byte[])param);
 			param = baos.toString(getEncoding(message));
 		}
 		if (!(param instanceof String))
