@@ -328,17 +328,19 @@ public class PGPSignService extends PGPService
 		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider(PROVIDER));
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-		BCPGOutputStream bOut = new BCPGOutputStream(comData.open(out));
-		int ch;
-		while ((ch = in.read()) >= 0)
+		try (BCPGOutputStream bOut = new BCPGOutputStream(comData.open(out)))
 		{
-			sGen.update((byte)ch);
-		}
-		sGen.generate().encode(bOut);
-		comData.close();
-		if (armor)
-		{
-			out.close();
+			int ch;
+			while ((ch = in.read()) >= 0)
+			{
+				sGen.update((byte)ch);
+			}
+			sGen.generate().encode(bOut);
+			comData.close();
+			if (armor)
+			{
+				out.close();
+			}
 		}
 	}
 

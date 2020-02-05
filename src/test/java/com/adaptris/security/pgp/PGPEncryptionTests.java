@@ -153,6 +153,10 @@ public class PGPEncryptionTests extends PGPTests
 			setUp();
 			message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
 			PGPDecryptService decrypt = getDecryptService(PASSPHRASE, false);
+			MultiPayloadByteArrayInputParameter passParam = new MultiPayloadByteArrayInputParameter();
+			passParam.setPayloadId(PASSPHRASE);
+			message.addPayload(PASSPHRASE, PASSPHRASE.getBytes());
+			decrypt.setPassphrase(passParam);
 			decrypt.doService(message);
 
 			fail();

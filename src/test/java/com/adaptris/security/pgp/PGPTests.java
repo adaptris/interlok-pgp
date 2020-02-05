@@ -5,6 +5,7 @@ import com.adaptris.core.AdaptrisMessageFactory;
 import com.adaptris.core.MultiPayloadAdaptrisMessage;
 import com.adaptris.core.MultiPayloadMessageFactory;
 import com.adaptris.core.ServiceCase;
+import com.adaptris.core.common.MultiPayloadByteArrayInputParameter;
 import com.adaptris.core.common.MultiPayloadStreamInputParameter;
 import com.adaptris.core.common.MultiPayloadStreamOutputParameter;
 import com.adaptris.core.common.MultiPayloadStringInputParameter;
@@ -209,8 +210,8 @@ abstract class PGPTests extends ServiceCase
 		}
 		else
 		{
-			keyParam = new MultiPayloadStreamInputParameter();
-			((MultiPayloadStreamInputParameter)keyParam).setPayloadId(PAYLOAD_KEY);
+			keyParam = new MultiPayloadByteArrayInputParameter();
+			((MultiPayloadByteArrayInputParameter)keyParam).setPayloadId(PAYLOAD_KEY);
 		}
 		return keyParam;
 	}
