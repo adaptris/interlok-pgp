@@ -2,7 +2,15 @@ package com.adaptris.security.pgp;
 
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.AdaptrisMessageFactory;
+import com.adaptris.core.MultiPayloadAdaptrisMessage;
+import com.adaptris.core.MultiPayloadMessageFactory;
 import com.adaptris.core.ServiceCase;
+import com.adaptris.core.common.MultiPayloadStreamInputParameter;
+import com.adaptris.core.common.MultiPayloadStreamOutputParameter;
+import com.adaptris.core.common.MultiPayloadStringInputParameter;
+import com.adaptris.core.common.MultiPayloadStringOutputParameter;
+import com.adaptris.interlok.config.DataInputParameter;
+import com.adaptris.interlok.config.DataOutputParameter;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -27,11 +35,16 @@ import java.util.Date;
 abstract class PGPTests extends ServiceCase
 {
 	protected static final String MESSAGE = "Spicy jalapeno bacon ipsum dolor amet shankle hamburger tri-tip, filet mignon ham sirloin prosciutto pig andouille pork belly pork loin. Tail beef kielbasa alcatra salami doner turkey corned beef fatback leberkas pastrami shoulder spare ribs filet mignon pork loin. Cupim doner pastrami chicken venison pork loin. Ribeye pork tri-tip cow buffalo rump boudin sirloin short ribs picanha salami." + System.getProperty("line.separator");
-	protected static final String ID = "email@example.com";
 	protected static final String PASSPHRASE = "passphrase";
+
+	private static final String ID = "email@example.com";
 
 	protected PGPSecretKey privateKey;
 	protected PGPPublicKey publicKey;
+
+	protected String PAYLOAD_KEY = "key";
+	protected String PAYLOAD_CIPHERTEXT = "ciphertext";
+	protected String PAYLOAD_PLAINTEXT = "plaintext";
 
 	@Before
 	public void setUp() throws Exception
@@ -91,7 +104,7 @@ abstract class PGPTests extends ServiceCase
 	 *
 	 * @throws Exception Something went wrong!
 	 */
-	protected AdaptrisMessage newMessage() throws Exception
+	protected MultiPayloadAdaptrisMessage newMessage() throws Exception
 	{
 		return newMessage(false);
 	}
@@ -105,9 +118,10 @@ abstract class PGPTests extends ServiceCase
 	 *
 	 * @throws Exception Something went wrong!
 	 */
-	protected AdaptrisMessage newMessage(boolean passphrase) throws Exception
+	protected MultiPayloadAdaptrisMessage newMessage(boolean passphrase) throws Exception
 	{
-		return AdaptrisMessageFactory.getDefaultInstance().newMessage(passphrase ? PASSPHRASE : MESSAGE);
+		MultiPayloadMessageFactory factory = new MultiPayloadMessageFactory();
+		return (MultiPayloadAdaptrisMessage)factory.newMessage(PAYLOAD_PLAINTEXT, passphrase ? PASSPHRASE : MESSAGE, factory.getDefaultCharEncoding());
 	}
 
 	/**
@@ -119,46 +133,131 @@ abstract class PGPTests extends ServiceCase
 	 *
 	 * @throws Exception Something went wrong!
 	 */
-	protected AdaptrisMessage newMessage(AdaptrisMessage original) throws Exception
+	protected MultiPayloadAdaptrisMessage newMessage(MultiPayloadAdaptrisMessage original) throws Exception
 	{
-		AdaptrisMessage message = AdaptrisMessageFactory.getDefaultInstance().newMessage(original.getPayload());
+		MultiPayloadAdaptrisMessage message = (MultiPayloadAdaptrisMessage)new MultiPayloadMessageFactory().newMessage(PAYLOAD_CIPHERTEXT, original.getPayload(PAYLOAD_CIPHERTEXT));
 		message.setContentEncoding(original.getContentEncoding());
 		return message;
 	}
 
 	/**
-	 * Get the ASCII armored private key.
+	 * Get the private key.
 	 *
-	 * @param key The raw private key data.
+	 * @param key The private key object.
+	 * @param armor Whether to ASCII armor the key.
 	 *
-	 * @return The ASCII armored key.
+	 * @return The key.
 	 *
 	 * @throws Exception Something went wrong!
 	 */
-	protected String getKey(PGPSecretKey key) throws Exception
+	protected byte[] getKey(PGPSecretKey key, boolean armor) throws Exception
 	{
 		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
-		ArmoredOutputStream armored = new ArmoredOutputStream(keyBytes);
-		key.encode(armored);
-		armored.close();
-		return keyBytes.toString();
+		if (armor)
+		{
+			ArmoredOutputStream armored = new ArmoredOutputStream(keyBytes);
+			key.encode(armored);
+			armored.close();
+		}
+		else
+		{
+			key.encode(keyBytes);
+		}
+		return keyBytes.toByteArray();
 	}
 
 	/**
-	 * Get the ASCII armored public key.
+	 * Get the public key.
 	 *
-	 * @param key The raw public key data.
+	 * @param key The public key object.
+	 * @param armor Whether to ASCII armor the key.
 	 *
-	 * @return The ASCII armored key.
+	 * @return The key.
 	 *
 	 * @throws Exception Something went wrong!
 	 */
-	protected String getKey(PGPPublicKey key) throws Exception
+	protected byte[] getKey(PGPPublicKey key, boolean armor) throws Exception
 	{
 		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
-		ArmoredOutputStream armored = new ArmoredOutputStream(keyBytes);
-		key.encode(armored);
-		armored.close();
-		return keyBytes.toString();
+		if (armor)
+		{
+			ArmoredOutputStream armored = new ArmoredOutputStream(keyBytes);
+			key.encode(armored);
+			armored.close();
+		}
+		else
+		{
+			key.encode(keyBytes);
+		}
+		return keyBytes.toByteArray();
+	}
+
+	/**
+	 * Get an input parameter for the key.
+	 *
+	 * @param armor Whether the key will be ASCII armor encoded.
+	 *
+	 * @return A data input parameter for the key.
+	 */
+	protected DataInputParameter getKeyInput(boolean armor)
+	{
+		DataInputParameter keyParam;
+		if (armor)
+		{
+			keyParam = new MultiPayloadStringInputParameter();
+			((MultiPayloadStringInputParameter)keyParam).setPayloadId(PAYLOAD_KEY);
+		}
+		else
+		{
+			keyParam = new MultiPayloadStreamInputParameter();
+			((MultiPayloadStreamInputParameter)keyParam).setPayloadId(PAYLOAD_KEY);
+		}
+		return keyParam;
+	}
+
+	/**
+	 * Get an input parameter for the cipher text.
+	 *
+	 * @param armor Whether the cipher text will be ASCII armor encoded.
+	 *
+	 * @return A data input parameter for the cipher text.
+	 */
+	protected DataInputParameter getCipherInput(boolean armor)
+	{
+		DataInputParameter cipherParam;
+		if (armor)
+		{
+			cipherParam = new MultiPayloadStringInputParameter();
+			((MultiPayloadStringInputParameter)cipherParam).setPayloadId(PAYLOAD_CIPHERTEXT);
+		}
+		else
+		{
+			cipherParam = new MultiPayloadStreamInputParameter();
+			((MultiPayloadStreamInputParameter)cipherParam).setPayloadId(PAYLOAD_CIPHERTEXT);
+		}
+		return cipherParam;
+	}
+
+	/**
+	 * Get an output parameter for the cipher text.
+	 *
+	 * @param armor Whether the cipher text will be ASCII armor encoded.
+	 *
+	 * @return A data output parameter for the cipher text.
+	 */
+	protected DataOutputParameter getCipherOutput(boolean armor)
+	{
+		DataOutputParameter cipherParam;
+		if (armor)
+		{
+			cipherParam = new MultiPayloadStringOutputParameter();
+			((MultiPayloadStringOutputParameter)cipherParam).setPayloadId(PAYLOAD_CIPHERTEXT);
+		}
+		else
+		{
+			cipherParam = new MultiPayloadStreamOutputParameter();
+			((MultiPayloadStreamOutputParameter)cipherParam).setPayloadId(PAYLOAD_CIPHERTEXT);
+		}
+		return cipherParam;
 	}
 }

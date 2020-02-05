@@ -1,11 +1,10 @@
 package com.adaptris.security.pgp;
 
 import com.adaptris.core.AdaptrisMessage;
-import com.adaptris.core.common.ConstantDataInputParameter;
-import com.adaptris.core.common.PayloadStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamOutputParameter;
-import com.adaptris.core.common.StringPayloadDataInputParameter;
-import com.adaptris.core.common.StringPayloadDataOutputParameter;
+import com.adaptris.core.MultiPayloadAdaptrisMessage;
+import com.adaptris.core.common.*;
+import com.adaptris.interlok.config.DataInputParameter;
+import com.adaptris.interlok.config.DataOutputParameter;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
@@ -21,65 +20,65 @@ public class PGPEncryptionTests extends PGPTests
 	@Test
 	public void testEntireWorkflow() throws Exception
 	{
-		AdaptrisMessage message = newMessage();
-		PGPEncryptService encrypt = getEncryptService(publicKey, true, true);
-
+		MultiPayloadAdaptrisMessage message = newMessage();
+		message.addPayload(PAYLOAD_KEY, getKey(publicKey, true));
+		PGPEncryptService encrypt = getEncryptService(true, true);
 		encrypt.doService(message);
 
 		message = newMessage(message);
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, true);
-
+		message.addPayload(PAYLOAD_KEY, getKey(privateKey, true));
+		PGPDecryptService decrypt = getDecryptService(PASSPHRASE, true);
 		decrypt.doService(message);
 
-		Assert.assertEquals(MESSAGE, message.getContent());
+		Assert.assertEquals(MESSAGE, message.getContent(PAYLOAD_PLAINTEXT));
 	}
 
 	@Test
 	public void testWorkflowNonArmored() throws Exception
 	{
-		AdaptrisMessage message = newMessage();
-		PGPEncryptService encrypt = getEncryptService(publicKey, false, true);
-
+		MultiPayloadAdaptrisMessage message = newMessage();
+		message.addPayload(PAYLOAD_KEY, getKey(publicKey, false));
+		PGPEncryptService encrypt = getEncryptService(false, true);
 		encrypt.doService(message);
 
 		message = newMessage(message);
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
-
+		message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
+		PGPDecryptService decrypt = getDecryptService(PASSPHRASE, false);
 		decrypt.doService(message);
 
-		Assert.assertEquals(MESSAGE, message.getContent());
+		Assert.assertEquals(MESSAGE, message.getContent(PAYLOAD_PLAINTEXT));
 	}
 
 	@Test
 	public void testWorkflowNoIntegrity() throws Exception
 	{
-		AdaptrisMessage message = newMessage();
-		PGPEncryptService encrypt = getEncryptService(publicKey, true, false);
-
+		MultiPayloadAdaptrisMessage message = newMessage();
+		message.addPayload(PAYLOAD_KEY, getKey(publicKey, true));
+		PGPEncryptService encrypt = getEncryptService(true, false);
 		encrypt.doService(message);
 
 		message = newMessage(message);
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, true);
-
+		message.addPayload(PAYLOAD_KEY, getKey(privateKey, true));
+		PGPDecryptService decrypt = getDecryptService(PASSPHRASE, true);
 		decrypt.doService(message);
 
-		Assert.assertEquals(MESSAGE, message.getContent());
+		Assert.assertEquals(MESSAGE, message.getContent(PAYLOAD_PLAINTEXT));
 	}
 
 	@Test
 	public void testWorkflowNoArmorOrIntegrity() throws Exception
 	{
-		AdaptrisMessage message = newMessage();
-		PGPEncryptService encrypt = getEncryptService(publicKey, false, false);
-
+		MultiPayloadAdaptrisMessage message = newMessage();
+		message.addPayload(PAYLOAD_KEY, getKey(publicKey, false));
+		PGPEncryptService encrypt = getEncryptService(false, false);
 		encrypt.doService(message);
 
 		message = newMessage(message);
-		PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
-
+		message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
+		PGPDecryptService decrypt = getDecryptService(PASSPHRASE, false);
 		decrypt.doService(message);
 
-		Assert.assertEquals(MESSAGE, message.getContent());
+		Assert.assertEquals(MESSAGE, message.getContent(PAYLOAD_PLAINTEXT));
 	}
 
 	@Test
@@ -87,10 +86,12 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = newMessage();
-			PGPEncryptService service = getEncryptService(publicKey, false, false);
+			MultiPayloadAdaptrisMessage message = newMessage();
+			message.addPayload(PAYLOAD_KEY, getKey(publicKey, false));
+			PGPEncryptService service = getEncryptService(false, false);
 			service.setPublicKey(new ConstantDataInputParameter());
 			service.doService(message);
+
 			fail();
 		}
 		catch (Exception e)
@@ -104,10 +105,12 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = newMessage();
-			PGPEncryptService service = getEncryptService(publicKey, false, false);
+			MultiPayloadAdaptrisMessage message = newMessage();
+			message.addPayload(PAYLOAD_KEY, getKey(publicKey, false));
+			PGPEncryptService service = getEncryptService(false, false);
 			service.setClearText(new ConstantDataInputParameter());
 			service.doService(message);
+
 			fail();
 		}
 		catch (Exception e)
@@ -121,10 +124,12 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = newMessage();
-			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
+			MultiPayloadAdaptrisMessage message = newMessage();
+			message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
+			PGPDecryptService service = getDecryptService(PASSPHRASE, false);
 			service.setPrivateKey(new ConstantDataInputParameter());
 			service.doService(message);
+
 			fail();
 		}
 		catch (Exception e)
@@ -138,17 +143,18 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = newMessage();
-			PGPEncryptService encrypt = getEncryptService(publicKey, true, true);
-
+			MultiPayloadAdaptrisMessage message = newMessage();
+			message.addPayload(PAYLOAD_KEY, getKey(publicKey, true));
+			PGPEncryptService encrypt = getEncryptService(true, true);
 			encrypt.doService(message);
 
 			message = newMessage(message);
 			/* recall setUp to get a new/wrong private key */
 			setUp();
-			PGPDecryptService decrypt = getDecryptService(privateKey, PASSPHRASE, false);
-
+			message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
+			PGPDecryptService decrypt = getDecryptService(PASSPHRASE, false);
 			decrypt.doService(message);
+
 			fail();
 		}
 		catch (Exception e)
@@ -162,10 +168,12 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = newMessage();
-			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
+			MultiPayloadAdaptrisMessage message = newMessage();
+			message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
+			PGPDecryptService service = getDecryptService(PASSPHRASE, false);
 			service.setPassphrase(new ConstantDataInputParameter());
 			service.doService(message);
+
 			fail();
 		}
 		catch (Exception e)
@@ -179,11 +187,13 @@ public class PGPEncryptionTests extends PGPTests
 	{
 		try
 		{
-			AdaptrisMessage message = newMessage(true);
-			PGPDecryptService service = getDecryptService(privateKey, PASSPHRASE, false);
+			MultiPayloadAdaptrisMessage message = newMessage(true);
+			message.addPayload(PAYLOAD_KEY, getKey(privateKey, false));
+			PGPDecryptService service = getDecryptService(PASSPHRASE, false);
 			service.setPassphrase(new PayloadStreamInputParameter());
 			service.setCipherText(new ConstantDataInputParameter());
 			service.doService(message);
+
 			fail();
 		}
 		catch (Exception e)
@@ -192,35 +202,28 @@ public class PGPEncryptionTests extends PGPTests
 		}
 	}
 
-	private PGPEncryptService getEncryptService(PGPPublicKey key, boolean armor, boolean integrity) throws Exception
+	private PGPEncryptService getEncryptService(boolean armor, boolean integrity) throws Exception
 	{
-		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
-		ArmoredOutputStream armoredKey = new ArmoredOutputStream(keyBytes);
-		key.encode(armoredKey);
-		armoredKey.close();
-
 		PGPEncryptService service = new PGPEncryptService();
-		service.setPublicKey(new ConstantDataInputParameter(keyBytes.toString()));
-		service.setClearText(new StringPayloadDataInputParameter());
-		PayloadStreamOutputParameter streamOutput = new PayloadStreamOutputParameter();
-		service.setCipherText(armor ? new StringPayloadDataOutputParameter() : streamOutput);
+		service.setPublicKey(getKeyInput(armor));
+		MultiPayloadStringInputParameter clearParam = new MultiPayloadStringInputParameter();
+		clearParam.setPayloadId(PAYLOAD_PLAINTEXT);
+		service.setClearText(clearParam);
+		service.setCipherText(getCipherOutput(armor));
 		service.setArmorEncoding(armor);
 		service.setIntegrityCheck(integrity);
 		return service;
 	}
 
-	private PGPDecryptService getDecryptService(PGPSecretKey key, String passphrase, boolean armor) throws Exception
+	private PGPDecryptService getDecryptService(String passphrase, boolean armor) throws Exception
 	{
-		ByteArrayOutputStream keyBytes = new ByteArrayOutputStream();
-		ArmoredOutputStream armoredKey = new ArmoredOutputStream(keyBytes);
-		key.encode(armoredKey);
-		armoredKey.close();
-
 		PGPDecryptService service = new PGPDecryptService();
-		service.setPrivateKey(new ConstantDataInputParameter(keyBytes.toString()));
+		service.setPrivateKey(getKeyInput(armor));
 		service.setPassphrase(new ConstantDataInputParameter(passphrase));
-		service.setCipherText(armor ? new StringPayloadDataInputParameter() : new PayloadStreamInputParameter());
-		service.setClearText(new StringPayloadDataOutputParameter());
+		service.setCipherText(getCipherInput(armor));
+		MultiPayloadStringOutputParameter plainParam = new MultiPayloadStringOutputParameter();
+		plainParam.setPayloadId(PAYLOAD_PLAINTEXT);
+		service.setClearText(plainParam);
 		return service;
 	}
 
