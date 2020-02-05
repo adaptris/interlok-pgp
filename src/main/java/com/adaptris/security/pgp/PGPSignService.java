@@ -19,14 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPSecretKey;
-import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.PGPSignatureGenerator;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -334,13 +327,15 @@ public class PGPSignService extends PGPService
 		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(PROVIDER).build(passwd));
 		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider(PROVIDER));
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
-		BCPGOutputStream bOut = new BCPGOutputStream(out);
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+		BCPGOutputStream bOut = new BCPGOutputStream(comData.open(out));
 		int ch;
 		while ((ch = in.read()) >= 0)
 		{
 			sGen.update((byte)ch);
 		}
 		sGen.generate().encode(bOut);
+		comData.close();
 		if (armor)
 		{
 			out.close();

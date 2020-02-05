@@ -242,7 +242,7 @@ public class PGPEncryptService extends PGPService
 		PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.AES_256).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(PROVIDER));
 		cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider(PROVIDER));
 		OutputStream cOut = cPk.open(out, new byte[1 << 16]);
-		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.UNCOMPRESSED);
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
 		writeFileToLiteralData(in, comData.open(cOut), PGPLiteralData.BINARY, new byte[1 << 16]);
 		comData.close();
 		cOut.close();
