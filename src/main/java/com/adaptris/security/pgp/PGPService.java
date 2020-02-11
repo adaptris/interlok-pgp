@@ -4,6 +4,8 @@ import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceImp;
 import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
+import com.adaptris.core.common.StringPayloadDataOutputParameter;
+import com.adaptris.core.common.ByteArrayPayloadDataOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
@@ -122,15 +124,19 @@ abstract class PGPService extends ServiceImp
 
 	protected void insertStream(AdaptrisMessage message, DataOutputParameter parameter, ByteArrayOutputStream value) throws Exception
 	{
-		try
+		if (parameter instanceof StringPayloadDataOutputParameter)
 		{
 			parameter.insert(value.toString(getEncoding(message)), message);
 		}
-		catch (ClassCastException e)
+		else if (parameter instanceof PayloadStreamOutputParameter)
 		{
 			// force no character encoding; data is raw bytes
 			((PayloadStreamOutputParameter)parameter).setContentEncoding(null);
 			parameter.insert(new InputStreamWithEncoding(new ByteArrayInputStream(value.toByteArray()), null), message);
+		}
+		else if (parameter instanceof ByteArrayPayloadDataOutputParameter)
+		{
+			parameter.insert(value.toByteArray(), message);
 		}
 	}
 
