@@ -97,9 +97,7 @@ public class PGPEncryptService extends PGPService
 	@InputFieldDefault(value = "true")
 	private Boolean integrityCheck = true;
 
-	private String id;
-
-	/**
+		/**
 	 * {@inheritDoc}.
 	 */
 	@Override
@@ -110,8 +108,8 @@ public class PGPEncryptService extends PGPService
 			InputStream key = extractStream(message, publicKey, "Could not read public key");
 			InputStream clear = extractStream(message, clearText, "Could not read clear text message to encrypt");
 			ByteArrayOutputStream cipher = new ByteArrayOutputStream();
-			id = message.getUniqueId();
-			encrypt(clear, cipher, key, armorEncoding, integrityCheck);
+			String id = message.getUniqueId();
+			encrypt(id, clear, cipher, key, armorEncoding, integrityCheck);
 			insertStream(message, cipherText, cipher);
 		}
 		catch (Exception e)
@@ -232,7 +230,7 @@ public class PGPEncryptService extends PGPService
 	 * @throws PGPException Thrown if there's a problem with the key/passphrase.
 	 * @throws IOException  Thrown if there's an IO issue.
 	 */
-	private void encrypt(InputStream in, OutputStream out, InputStream encKey, boolean armor, boolean withIntegrityCheck) throws PGPException, IOException
+	private void encrypt(String id, InputStream in, OutputStream out, InputStream encKey, boolean armor, boolean withIntegrityCheck) throws PGPException, IOException
 	{
 		if (armor)
 		{
@@ -243,7 +241,7 @@ public class PGPEncryptService extends PGPService
 		cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(encKey)).setProvider(PROVIDER));
 		OutputStream cOut = cPk.open(out, new byte[1 << 16]);
 		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-		writeFileToLiteralData(in, comData.open(cOut), PGPLiteralData.BINARY, new byte[1 << 16]);
+		writeFileToLiteralData(id, in, comData.open(cOut), PGPLiteralData.BINARY, new byte[1 << 16]);
 		comData.close();
 		cOut.close();
 		if (armor)
@@ -296,7 +294,7 @@ public class PGPEncryptService extends PGPService
 	 * @throws IOException if an error occurs reading the file or writing to the output stream.
 	 * @see PGPLiteralDataGenerator#open(OutputStream, char, String, Date, byte[])
 	 */
-	private void writeFileToLiteralData(InputStream in, OutputStream out, char fileType, byte[] buffer) throws IOException
+	private void writeFileToLiteralData(String id, InputStream in, OutputStream out, char fileType, byte[] buffer) throws IOException
 	{
 		PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
 		byte[] buf = new byte[buffer.length];
