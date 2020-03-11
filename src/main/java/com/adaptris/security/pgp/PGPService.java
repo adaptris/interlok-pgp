@@ -3,6 +3,9 @@ package com.adaptris.security.pgp;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceImp;
 import com.adaptris.core.common.InputStreamWithEncoding;
+import com.adaptris.core.common.PayloadStreamOutputParameter;
+import com.adaptris.core.common.StringPayloadDataOutputParameter;
+import com.adaptris.core.common.ByteArrayPayloadDataOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
@@ -22,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.security.SignatureException;
 
@@ -33,7 +35,7 @@ abstract class PGPService extends ServiceImp
 {
 	private static final int READ_AHEAD = 60;
 
-	protected static final Charset CHARSET = StandardCharsets.UTF_8;
+	static final String PROVIDER = "BC";
 
 	static
 	{
@@ -84,7 +86,11 @@ abstract class PGPService extends ServiceImp
 		Object param = parameter.extract(message);
 		if (param instanceof String)
 		{
-			param = new ByteArrayInputStream(((String)param).getBytes(CHARSET));
+			param = new ByteArrayInputStream(((String)param).getBytes(getEncoding(message)));
+		}
+		if (param instanceof byte[])
+		{
+			param = new ByteArrayInputStream((byte[])param);
 		}
 		if (!(param instanceof InputStream))
 		{
@@ -101,7 +107,13 @@ abstract class PGPService extends ServiceImp
 		{
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			IOUtils.copy((InputStream)param, baos);
-			param = baos.toString(CHARSET.toString());
+			param = baos.toString(getEncoding(message));
+		}
+		if (param instanceof byte[])
+		{
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			baos.write((byte[])param);
+			param = baos.toString(getEncoding(message));
 		}
 		if (!(param instanceof String))
 		{
@@ -112,13 +124,19 @@ abstract class PGPService extends ServiceImp
 
 	protected void insertStream(AdaptrisMessage message, DataOutputParameter parameter, ByteArrayOutputStream value) throws Exception
 	{
-		try
+		if (parameter instanceof StringPayloadDataOutputParameter)
 		{
-			parameter.insert(value.toString(CHARSET.toString()), message);
+			parameter.insert(value.toString(getEncoding(message)), message);
 		}
-		catch (ClassCastException e)
+		else if (parameter instanceof PayloadStreamOutputParameter)
 		{
+			// force no character encoding; data is raw bytes
+			((PayloadStreamOutputParameter)parameter).setContentEncoding(null);
 			parameter.insert(new InputStreamWithEncoding(new ByteArrayInputStream(value.toByteArray()), null), message);
+		}
+		else if (parameter instanceof ByteArrayPayloadDataOutputParameter)
+		{
+			parameter.insert(value.toByteArray(), message);
 		}
 	}
 
@@ -342,5 +360,19 @@ abstract class PGPService extends ServiceImp
 			lookAhead = fIn.read();
 		}
 		return lookAhead;
+	}
+
+	private String getEncoding(AdaptrisMessage message)
+	{
+		String encoding = message.getContentEncoding();
+		if (encoding == null)
+		{
+			encoding = message.getFactory().getDefaultCharEncoding();
+		}
+		if (encoding == null)
+		{
+			encoding = Charset.defaultCharset().toString();
+		}
+		return encoding;
 	}
 }

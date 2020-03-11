@@ -15,18 +15,11 @@ import com.adaptris.interlok.config.DataOutputParameter;
 import com.adaptris.interlok.resolver.ExternalResolver;
 import com.adaptris.security.password.Password;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPSecretKey;
-import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.PGPSignatureGenerator;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -275,8 +268,8 @@ public class PGPSignService extends PGPService
 	private static void sign(InputStream in, InputStream key, char[] passwd, int digest, OutputStream out) throws PGPException, IOException, SignatureException
 	{
 		PGPSecretKey pgpSec = readSecretKey(key);
-		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
-		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
+		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(PROVIDER).build(passwd));
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider(PROVIDER));
 		PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
 		sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, pgpPrivKey);
 		Iterator it = pgpSec.getPublicKey().getUserIDs();
@@ -331,19 +324,23 @@ public class PGPSignService extends PGPService
 			out = new ArmoredOutputStream(out);
 		}
 		PGPSecretKey pgpSec = readSecretKey(key);
-		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passwd));
-		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider("BC"));
+		PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(PROVIDER).build(passwd));
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), digest).setProvider(PROVIDER));
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
-		BCPGOutputStream bOut = new BCPGOutputStream(out);
-		int ch;
-		while ((ch = in.read()) >= 0)
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+		try (BCPGOutputStream bOut = new BCPGOutputStream(comData.open(out)))
 		{
-			sGen.update((byte)ch);
-		}
-		sGen.generate().encode(bOut);
-		if (armor)
-		{
-			out.close();
+			int ch;
+			while ((ch = in.read()) >= 0)
+			{
+				sGen.update((byte)ch);
+			}
+			sGen.generate().encode(bOut);
+			comData.close();
+			if (armor)
+			{
+				out.close();
+			}
 		}
 	}
 
