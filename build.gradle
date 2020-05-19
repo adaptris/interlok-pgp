@@ -9,6 +9,7 @@ plugins {
   // Manage optional dependencies in maven pom.
   id 'nebula.optional-base' version '5.0.3'
   id 'com.github.spotbugs' version '4.2.0'
+  id 'org.owasp.dependencycheck' version '5.3.2.1'
 }
 
 ext {
@@ -338,6 +339,16 @@ spotbugsMain {
 // disable spotbugsTests which checks our test code..
 spotbugsTest.enabled = false
 
+dependencyCheck  {
+  suppressionFiles= [ "https://raw.githubusercontent.com/adaptris/interlok/develop/gradle/owasp-exclude.xml" ]
+  skipConfigurations = [ "antSql", "spotbugs", "umlDoclet", "offlineJavadocPackages", "javadoc" ]
+  formats = [ "HTML", "JUNIT" ]
+  junitFailOnCVSS = 7.0
+  failBuildOnCVSS = 7.0
+  analyzers {
+    assemblyEnabled=false
+  }
+}
 
 
 check.dependsOn jacocoTestReport
