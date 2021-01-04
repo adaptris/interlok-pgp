@@ -305,6 +305,8 @@ publishing {
         properties.appendNode("target", "3.9.2+")
         properties.appendNode("tags", "pgp,security")
         properties.appendNode("license", "false")
+        properties.appendNode("repository", "https://github.com/adaptris/interlok-pgp")
+        properties.appendNode("readme", "https://github.com/adaptris/interlok-pgp/raw/develop/README.md")
       }
     }
   }
