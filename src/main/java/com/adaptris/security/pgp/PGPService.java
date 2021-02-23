@@ -83,18 +83,26 @@ abstract class PGPService extends ServiceImp
 
 	protected InputStream extractStream(AdaptrisMessage message, DataInputParameter parameter, String warning) throws Exception
 	{
-		Object param = parameter.extract(message);
-		if (param instanceof String)
+		Object param = null;
+		try
 		{
-			param = new ByteArrayInputStream(((String)param).getBytes(getEncoding(message)));
+			param = parameter.extract(message);
+			if (param instanceof String)
+			{
+				param = new ByteArrayInputStream(((String)param).getBytes(getEncoding(message)));
+			}
+			if (param instanceof byte[])
+			{
+				param = new ByteArrayInputStream((byte[])param);
+			}
+			if (!(param instanceof InputStream))
+			{
+				throw new InterlokException(warning);
+			}
 		}
-		if (param instanceof byte[])
+		catch (Exception e)
 		{
-			param = new ByteArrayInputStream((byte[])param);
-		}
-		if (!(param instanceof InputStream))
-		{
-			throw new InterlokException(warning);
+			log.warn("Could not determine signature type; assuming inline", e);
 		}
 		return (InputStream)param;
 	}

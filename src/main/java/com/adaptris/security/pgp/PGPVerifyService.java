@@ -95,7 +95,7 @@ public class PGPVerifyService extends PGPService
 				sig = extractStream(message, signature, "Could not read signature to verify");
 			}
 			ByteArrayOutputStream original = new ByteArrayOutputStream();
-			if (signature != null)
+			if (sig != null)
 			{
 				verify(data, sig, key, original);
 			}
