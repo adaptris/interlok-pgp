@@ -1,19 +1,15 @@
 package com.adaptris.security.pgp;
 
-import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.MultiPayloadAdaptrisMessage;
-import com.adaptris.core.common.*;
-import com.adaptris.interlok.config.DataInputParameter;
-import com.adaptris.interlok.config.DataOutputParameter;
-import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.openpgp.PGPSecretKey;
+import com.adaptris.core.common.ConstantDataInputParameter;
+import com.adaptris.core.common.MultiPayloadByteArrayInputParameter;
+import com.adaptris.core.common.MultiPayloadStringInputParameter;
+import com.adaptris.core.common.MultiPayloadStringOutputParameter;
+import com.adaptris.core.common.PayloadStreamInputParameter;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;
-
-import java.io.ByteArrayOutputStream;
 
 public class PGPEncryptionTests extends PGPTests
 {
@@ -206,7 +202,7 @@ public class PGPEncryptionTests extends PGPTests
 		}
 	}
 
-	private PGPEncryptService getEncryptService(boolean armor, boolean integrity) throws Exception
+	private PGPEncryptService getEncryptService(boolean armor, boolean integrity)
 	{
 		PGPEncryptService service = new PGPEncryptService();
 		service.setPublicKey(getKeyInput(armor));
@@ -219,7 +215,7 @@ public class PGPEncryptionTests extends PGPTests
 		return service;
 	}
 
-	private PGPDecryptService getDecryptService(String passphrase, boolean armor) throws Exception
+	private PGPDecryptService getDecryptService(String passphrase, boolean armor)
 	{
 		PGPDecryptService service = new PGPDecryptService();
 		service.setPrivateKey(getKeyInput(armor));
@@ -234,12 +230,6 @@ public class PGPEncryptionTests extends PGPTests
 	@Override
 	protected Object retrieveObjectForSampleConfig()
 	{
-		return new PGPEncryptService();
+		return getEncryptService(true, true);
 	}
-
-    @Override
-    public boolean isAnnotatedForJunit4()
-    {
-        return true;
-    }
 }

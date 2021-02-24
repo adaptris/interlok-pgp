@@ -5,9 +5,6 @@ import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.MetadataStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -67,17 +64,17 @@ public class PGPVerifyService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter publicKey = new MetadataStreamInputParameter();
+	private DataInputParameter publicKey;
 
 	@NotNull
 	@Valid
-	private DataInputParameter signedMessage = new PayloadStreamInputParameter();
+	private DataInputParameter signedMessage;
 
 	@Valid
-	private DataInputParameter signature = new MetadataStreamInputParameter();
+	private DataInputParameter signature;
 
 	@Valid
-	private DataOutputParameter originalMessage = new PayloadStreamOutputParameter();
+	private DataOutputParameter originalMessage;
 
 	/**
 	 * {@inheritDoc}.

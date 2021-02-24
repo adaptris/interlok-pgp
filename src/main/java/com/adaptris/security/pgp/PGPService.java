@@ -2,10 +2,10 @@ package com.adaptris.security.pgp;
 
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceImp;
+import com.adaptris.core.common.ByteArrayPayloadDataOutputParameter;
 import com.adaptris.core.common.InputStreamWithEncoding;
 import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.core.common.StringPayloadDataOutputParameter;
-import com.adaptris.core.common.ByteArrayPayloadDataOutputParameter;
 import com.adaptris.interlok.InterlokException;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
@@ -83,26 +83,18 @@ abstract class PGPService extends ServiceImp
 
 	protected InputStream extractStream(AdaptrisMessage message, DataInputParameter parameter, String warning) throws Exception
 	{
-		Object param = null;
-		try
+		Object param = parameter.extract(message);
+		if (param instanceof String)
 		{
-			param = parameter.extract(message);
-			if (param instanceof String)
-			{
-				param = new ByteArrayInputStream(((String)param).getBytes(getEncoding(message)));
-			}
-			if (param instanceof byte[])
-			{
-				param = new ByteArrayInputStream((byte[])param);
-			}
-			if (!(param instanceof InputStream))
-			{
-				throw new InterlokException(warning);
-			}
+			param = new ByteArrayInputStream(((String)param).getBytes(getEncoding(message)));
 		}
-		catch (Exception e)
+		if (param instanceof byte[])
 		{
-			log.warn("Could not determine signature type; assuming inline", e);
+			param = new ByteArrayInputStream((byte[])param);
+		}
+		if (!(param instanceof InputStream))
+		{
+			throw new InterlokException(warning);
 		}
 		return (InputStream)param;
 	}
