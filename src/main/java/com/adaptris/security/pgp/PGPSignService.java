@@ -7,9 +7,6 @@ import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.MetadataDataOutputParameter;
-import com.adaptris.core.common.MetadataStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.adaptris.interlok.resolver.ExternalResolver;
@@ -19,7 +16,16 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -79,29 +85,29 @@ public class PGPSignService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter privateKey = new MetadataStreamInputParameter();
+	private DataInputParameter privateKey;
 
 	@NotNull
 	@Valid
-	private DataInputParameter passphrase = new MetadataStreamInputParameter();
+	private DataInputParameter passphrase;
 
 	@NotNull
 	@Valid
-	private DataInputParameter clearText = new PayloadStreamInputParameter();
+	private DataInputParameter clearText;
 
 	@Valid
 	@AdvancedConfig
 	@InputFieldDefault(value = "true")
-	private Boolean armorEncoding = true;
+	private Boolean armorEncoding;
 
 	@Valid
 	@AdvancedConfig
 	@InputFieldDefault(value = "true")
-	private Boolean detachedSignature = true;
+	private Boolean detachedSignature;
 
 	@NotNull
 	@Valid
-	private DataOutputParameter signature = new MetadataDataOutputParameter();
+	private DataOutputParameter signature;
 
 	/**
 	 * {@inheritDoc}.
@@ -115,9 +121,9 @@ public class PGPSignService extends PGPService
 			String password = Password.decode(ExternalResolver.resolve(extractString(message, passphrase, "Could not read passphrase")));
 			InputStream data = extractStream(message, clearText, "Could not read clear text message to sign");
 			ByteArrayOutputStream sig = new ByteArrayOutputStream();
-			if (detachedSignature)
+			if (detachedSignature())
 			{
-				sign(data, key, password.toCharArray(), DIGEST, armorEncoding, sig);
+				sign(data, key, password.toCharArray(), DIGEST, armorEncoding(), sig);
 			}
 			else
 			{
@@ -375,5 +381,15 @@ public class PGPSignService extends PGPService
 			}
 		}
 		throw new IllegalArgumentException("Can't find signing key in key ring");
+	}
+
+	private boolean armorEncoding()
+	{
+		return BooleanUtils.toBooleanDefaultIfNull(armorEncoding, true);
+	}
+
+	private boolean detachedSignature()
+	{
+		return BooleanUtils.toBooleanDefaultIfNull(detachedSignature, true);
 	}
 }

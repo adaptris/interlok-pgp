@@ -7,9 +7,6 @@ import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.annotation.InputFieldDefault;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.MetadataStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -77,25 +74,25 @@ public class PGPEncryptService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter publicKey = new MetadataStreamInputParameter();
+	private DataInputParameter publicKey;
 
 	@NotNull
 	@Valid
-	private DataInputParameter clearText = new PayloadStreamInputParameter();
+	private DataInputParameter clearText;
 
 	@NotNull
 	@Valid
-	private DataOutputParameter cipherText = new PayloadStreamOutputParameter();
+	private DataOutputParameter cipherText;
 
 	@Valid
 	@AdvancedConfig
 	@InputFieldDefault(value = "true")
-	private Boolean armorEncoding = true;
+	private Boolean armorEncoding;
 
 	@Valid
 	@AdvancedConfig
 	@InputFieldDefault(value = "true")
-	private Boolean integrityCheck = true;
+	private Boolean integrityCheck;
 
 		/**
 	 * {@inheritDoc}.
@@ -109,7 +106,7 @@ public class PGPEncryptService extends PGPService
 			InputStream clear = extractStream(message, clearText, "Could not read clear text message to encrypt");
 			ByteArrayOutputStream cipher = new ByteArrayOutputStream();
 			String id = message.getUniqueId();
-			encrypt(id, clear, cipher, key, armorEncoding, integrityCheck);
+			encrypt(id, clear, cipher, key, armorEncoding(), integrityCheck());
 			insertStream(message, cipherText, cipher);
 		}
 		catch (Exception e)
@@ -310,5 +307,15 @@ public class PGPEncryptService extends PGPService
 		{
 			Arrays.fill(buf, (byte)0);
 		}
+	}
+
+	private boolean armorEncoding()
+	{
+		return BooleanUtils.toBooleanDefaultIfNull(armorEncoding, true);
+	}
+
+	private boolean integrityCheck()
+	{
+		return BooleanUtils.toBooleanDefaultIfNull(integrityCheck, true);
 	}
 }

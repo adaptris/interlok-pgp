@@ -1,18 +1,15 @@
 package com.adaptris.security.pgp;
 
-import com.adaptris.core.AdaptrisMessage;
-import com.adaptris.core.AdaptrisMessageFactory;
 import com.adaptris.core.MultiPayloadAdaptrisMessage;
 import com.adaptris.core.MultiPayloadMessageFactory;
-import com.adaptris.core.ServiceCase;
 import com.adaptris.core.common.MultiPayloadByteArrayInputParameter;
 import com.adaptris.core.common.MultiPayloadByteArrayOutputParameter;
 import com.adaptris.core.common.MultiPayloadStreamInputParameter;
-import com.adaptris.core.common.MultiPayloadStreamOutputParameter;
 import com.adaptris.core.common.MultiPayloadStringInputParameter;
 import com.adaptris.core.common.MultiPayloadStringOutputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
+import com.adaptris.interlok.junit.scaffolding.services.ExampleServiceCase;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -34,7 +31,7 @@ import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.util.Date;
 
-abstract class PGPTests extends ServiceCase
+abstract class PGPTests extends ExampleServiceCase
 {
 	protected static final String MESSAGE = "Spicy jalapeno bacon ipsum dolor amet shankle hamburger tri-tip, filet mignon ham sirloin prosciutto pig andouille pork belly pork loin. Tail beef kielbasa alcatra salami doner turkey corned beef fatback leberkas pastrami shoulder spare ribs filet mignon pork loin. Cupim doner pastrami chicken venison pork loin. Ribeye pork tri-tip cow buffalo rump boudin sirloin short ribs picanha salami." + System.getProperty("line.separator");
 	protected static final String PASSPHRASE = "passphrase";
