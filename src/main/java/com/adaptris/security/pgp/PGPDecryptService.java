@@ -5,9 +5,6 @@ import com.adaptris.annotation.ComponentProfile;
 import com.adaptris.annotation.DisplayOrder;
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.ServiceException;
-import com.adaptris.core.common.MetadataStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamInputParameter;
-import com.adaptris.core.common.PayloadStreamOutputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
 import com.adaptris.interlok.resolver.ExternalResolver;
@@ -76,19 +73,19 @@ public class PGPDecryptService extends PGPService
 
 	@NotNull
 	@Valid
-	private DataInputParameter privateKey = new MetadataStreamInputParameter();
+	private DataInputParameter privateKey;
 
 	@NotNull
 	@Valid
-	private DataInputParameter passphrase = new MetadataStreamInputParameter();
+	private DataInputParameter passphrase;
 
 	@NotNull
 	@Valid
-	private DataInputParameter cipherText = new PayloadStreamInputParameter();
+	private DataInputParameter cipherText;
 
 	@NotNull
 	@Valid
-	private DataOutputParameter clearText = new PayloadStreamOutputParameter();
+	private DataOutputParameter clearText;
 
 	/**
 	 * {@inheritDoc}.

@@ -1,12 +1,14 @@
 package com.adaptris.security.pgp;
 
-import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.core.MultiPayloadAdaptrisMessage;
-import com.adaptris.core.common.*;
+import com.adaptris.core.common.ConstantDataInputParameter;
+import com.adaptris.core.common.MultiPayloadStreamInputParameter;
+import com.adaptris.core.common.MultiPayloadStreamOutputParameter;
+import com.adaptris.core.common.MultiPayloadStringInputParameter;
+import com.adaptris.core.common.MultiPayloadStringOutputParameter;
+import com.adaptris.core.common.PayloadStreamInputParameter;
 import com.adaptris.interlok.config.DataInputParameter;
 import com.adaptris.interlok.config.DataOutputParameter;
-import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.openpgp.PGPSecretKey;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -249,7 +251,7 @@ public class PGPSignatureTests extends PGPTests
 		}
 	}
 
-	private PGPSignService getSignService(String passphrase, boolean detached, boolean armor) throws Exception
+	private PGPSignService getSignService(String passphrase, boolean detached, boolean armor)
 	{
 		PGPSignService service = new PGPSignService();
 		service.setPrivateKey(getKeyInput(armor));
@@ -272,7 +274,7 @@ public class PGPSignatureTests extends PGPTests
 		return service;
 	}
 
-	private PGPVerifyService getVerifyService(boolean detached, boolean armor) throws Exception
+	private PGPVerifyService getVerifyService(boolean detached, boolean armor)
 	{
 		PGPVerifyService service = new PGPVerifyService();
 		service.setPublicKey(getKeyInput(armor));
@@ -302,12 +304,6 @@ public class PGPSignatureTests extends PGPTests
 	@Override
 	protected Object retrieveObjectForSampleConfig()
 	{
-		return new PGPSignService();
+		return getVerifyService(false, true);
 	}
-
-    @Override
-    public boolean isAnnotatedForJunit4()
-    {
-        return true;
-    }
 }
