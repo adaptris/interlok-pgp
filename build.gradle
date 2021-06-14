@@ -31,7 +31,7 @@ ext {
   organizationUrl = "http://interlok.adaptris.net"
   slf4jVersion = '1.7.30'
   mockitoVersion = '3.11.1'
-  bouncyCastleVersion='1.68'
+  bouncyCastleVersion='1.69'
 
 }
 
