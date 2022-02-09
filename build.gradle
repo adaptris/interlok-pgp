@@ -28,7 +28,7 @@ ext {
   componentDesc='A collection of services that provide PGP encryption, decryption, signing, and verification.'
   organizationName = "Adaptris Ltd"
   organizationUrl = "http://interlok.adaptris.net"
-  slf4jVersion = '1.7.35'
+  slf4jVersion = '1.7.36'
   mockitoVersion = '4.3.1'
   bouncyCastleVersion='1.70'
 
