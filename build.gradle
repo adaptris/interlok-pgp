@@ -31,7 +31,6 @@ ext {
   slf4jVersion = '2.0.3'
   mockitoVersion = '4.9.0'
   bouncyCastleVersion='1.70'
-
 }
 
 ext.hostname = { ->
@@ -79,8 +78,8 @@ ext.buildInfo = { ->
     }
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 group   = 'com.adaptris'
 version = releaseVersion
 def versionDir = "$buildDir/version"
@@ -101,7 +100,6 @@ allprojects {
   }
 }
 
-
 repositories {
   mavenCentral()
   if (defaultNexusRepo != "unknown") {
@@ -113,8 +111,6 @@ repositories {
   maven { url "$nexusBaseUrl/content/groups/public" }
   maven { url "$nexusBaseUrl/content/groups/interlok" }
 }
-
-
 
 configurations {
   javadoc {}
@@ -153,7 +149,7 @@ dependencies {
   annotationProcessor ("com.adaptris:interlok-core-apt:$interlokCoreVersion") {changing= true}
   umlDoclet("nl.talsmasoftware:umldoclet:1.1.4")
 
-  testImplementation ('junit:junit:4.13.2')
+  testImplementation ("org.junit.jupiter:junit-jupiter-engine:5.9.3")
   testImplementation ("org.slf4j:slf4j-simple:$slf4jVersion")
   testImplementation ("com.adaptris:interlok-stubs:$interlokCoreVersion") { changing= true }
   testImplementation ("org.mockito:mockito-core:$mockitoVersion")
@@ -212,6 +208,7 @@ task generateVersion {
     }
   }
 }
+
 task offlinePackageList(type: Copy) {
   description 'Build an offline package-list for javadocs'
   group 'Documentation'
@@ -276,10 +273,10 @@ task umlJavadoc(type: Javadoc) {
 }
 
 jacocoTestReport {
-    reports {
-        xml.required= true
-        html.required= true
-    }
+  reports {
+    xml.required= true
+    html.required= true
+  }
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -293,8 +290,8 @@ task examplesJar(type: Jar, dependsOn: test) {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+  classifier = 'sources'
+  from sourceSets.main.allSource
 }
 
 artifacts {
@@ -350,9 +347,6 @@ spotbugsMain {
   }
 }
 
-// disable spotbugsTests which checks our test code..
-spotbugsTest.enabled = false
-
 dependencyCheck  {
   suppressionFiles= [ "https://raw.githubusercontent.com/adaptris/interlok/develop/gradle/owasp-exclude.xml" ]
   scanConfigurations = [ "api", "compileClasspath", "runtimeClasspath" ]
@@ -365,6 +359,12 @@ dependencyCheck  {
   }
 }
 
+test {
+  useJUnitPlatform()
+}
+
+// disable spotbugsTests which checks our test code..
+spotbugsTest.enabled = false
 
 check.dependsOn jacocoTestReport
 processTestResources.dependsOn copyUnitTestProperties
