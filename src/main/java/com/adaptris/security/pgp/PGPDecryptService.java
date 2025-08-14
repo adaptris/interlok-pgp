@@ -9,8 +9,8 @@ import java.io.OutputStream;
 import java.security.NoSuchProviderException;
 import java.util.Iterator;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedData;

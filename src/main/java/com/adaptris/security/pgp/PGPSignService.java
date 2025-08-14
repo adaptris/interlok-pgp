@@ -8,8 +8,8 @@ import java.io.OutputStream;
 import java.security.SignatureException;
 import java.util.Iterator;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
